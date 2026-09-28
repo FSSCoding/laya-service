@@ -15,7 +15,7 @@ Read this first when operating or modifying the service on bobai.
 | Interface | HTTP only (no Unix socket — not needed yet) |
 | Model | Laya 421M-param ONNX (English), from `/MASTERFOLDER/Services/laya/onnx/` |
 | Runtime | Python 3.12 + `onnxruntime-gpu==1.30.0` (CUDA EP) |
-| GPU | One RTX 3090, pinned via `CUDA_VISIBLE_DEVICES=0` |
+| GPU | One RTX 3090, pinned via `CUDA_VISIBLE_DEVICES=1` (card 1; card 0 hosts other tenants) |
 | Venv | **Dedicated**: `/MASTERFOLDER/Services/laya-service/.venv` |
 
 ---
@@ -75,7 +75,7 @@ To verify CUDA is actually active after a change: `GET /health` → `providers` 
 
 | Var | Value | Why |
 |-----|-------|-----|
-| `CUDA_VISIBLE_DEVICES` | `0` | Pin to one 3090 (avoids contending with vLLM's tensor-parallel across both cards). Use `1` for the other. |
+| `CUDA_VISIBLE_DEVICES` | `1` | Pin to one 3090. Card 1 is the pin as of 2026-09-28 (card 0 hosts Fss-RAG, fss-tts, etc.); switch to `0` if card 1 gets saturated. |
 | `OMP_NUM_THREADS` / `MKL_NUM_THREADS` | `2` | Prevent thread oversubscription (model is small; 2 threads is plenty). |
 | `TOKENIZERS_PARALLELISM` | `false` | Avoid tokenizers warning + redundant threads. |
 | `PYTORCH_CUDA_ALLOC_CONF` | `max_split_size_mb:512` | Inherited from embed-server; harmless (ORT doesn't use torch) — keep for consistency. |
@@ -105,14 +105,14 @@ All runtime tunables are in the JSON config file.
 cd /MASTERFOLDER/Services/laya-service
 .venv/bin/python -m pip install -e .
 
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/laya-server
 ```
 
 Or via `python -m`:
 
 ```bash
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/python -m laya_server
 ```
 
@@ -154,11 +154,11 @@ curl -s http://127.0.0.1:11448/v1/stats
 
 # parity gate (decision-identical to CPU reference; run from the service dir)
 cd /MASTERFOLDER/Services/laya-service
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/python -m pytest tests/ -v
 
 # benchmark
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/python bench.py
 ```
 
@@ -178,8 +178,10 @@ Do NOT assert exact 4-decimal equality between CPU and GPU — that's not achiev
 - **Cache** is keyed on `sha256(state, questions)` — deterministic, so repeat requests are served
   from memory (~6 ms) instead of the GPU. Cache lives at `~/.laya-service/result_cache.db` + in-memory
   LRU. To clear: stop the service and delete the DB (or set `cache.enabled=false` in config).
-- **Pinned to one card.** If vLLM or another tenant saturates card 0, switch
-  `CUDA_VISIBLE_DEVICES` to `1` (and restart).
+- **Pinned to card 1** (`CUDA_VISIBLE_DEVICES=1`). If card 1 gets saturated by another tenant,
+  switch the pin to `0` (edit `CUDA_VISIBLE_DEVICES` in the unit source and the drop-in, then
+  `sudo-gui systemctl daemon-reload && sudo-gui systemctl restart laya-service.service`) and
+  update the docs to match.
 - **Re-verify after any ORT/model change**: run `pytest tests/` and check `/health` providers.
 - This service is **read-only** with respect to the `laya` repo (it reads the bundle, never writes).
 - **Config validation**: the server validates the config file at startup (port range, positive TTL,

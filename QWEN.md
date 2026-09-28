@@ -35,7 +35,7 @@ Request flow: HTTP → batcher (5 ms window, up to 512 requests) → worker → 
 
 ```bash
 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu
-CUDA_VISIBLE_DEVICES=0
+CUDA_VISIBLE_DEVICES=1
 ```
 
 Without this, CUDA can silently fall back to CPU. Verify `GET /health`: `providers` must list `CUDAExecutionProvider` first.
@@ -47,15 +47,15 @@ Without this, CUDA can silently fall back to CPU. Verify `GET /health`: `provide
 .venv/bin/python -m pip install -e ".[server,dev]"
 
 # Parity test
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/python -m pytest tests/
 
 # Benchmark
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/python bench.py
 
 # Run the HTTP service
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/laya-server
 ```
 

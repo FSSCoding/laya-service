@@ -35,15 +35,15 @@ cd /MASTERFOLDER/Services/laya-service
 
 ```bash
 # Parity check (CUDA):
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/python -m pytest tests/ -v
 
 # Benchmark (CPU vs GPU, single + batched):
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/python bench.py
 
 # Run the server (foreground):
-CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
   .venv/bin/laya-server
 # → http://0.0.0.0:11448
 ```
@@ -140,7 +140,7 @@ Response headers: `X-Request-Id`, `X-Latency-Ms`. Errors use an OpenAI-style env
 |----------|-------|-------|
 | **VRAM (idle, resident)** | **~2.3 GB** | Model held on-card at all times (resident, pre-warmed). Does NOT unload between requests. |
 | **System RAM (RSS)** | **~736 MB** | Python worker process (tokenizer + ONNX session host). |
-| **GPU util (idle)** | ~0–2% (the 16–17% on card 0 is *other* tenants) | Lay itself is idle when not inferring. |
+| **GPU util (idle)** | ~0–2% (any higher util on the card is *other* tenants) | Laya itself is idle when not inferring. |
 | **Single warm call** | **~15 ms** | 3-question call, warm. |
 | **Batched (16 concurrent)** | ~15 ms/request (one pass) | Coalesced into a single forward pass. |
 

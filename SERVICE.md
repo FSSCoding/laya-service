@@ -156,7 +156,7 @@ re-loads lazily on the next request (~0.7 s cold start).
 |-----|---------|---------|
 | `model_dir` | `/MASTERFOLDER/Services/laya/onnx` | Bundle location (read-only). |
 | `host` / `port` | `0.0.0.0` / `11448` | Bind address. |
-| `gpu.visible_devices` | `0` | Card to pin (set via `CUDA_VISIBLE_DEVICES`; see daemon). |
+| `gpu.visible_devices` | `1` | Card to pin (set via `CUDA_VISIBLE_DEVICES`; see unit). Note: this field is parsed but not read — the real pin is the unit's `CUDA_VISIBLE_DEVICES` env var; keep them in sync. |
 | `gpu.providers` | `[CUDA, CPU]` | Provider preference list (CUDA first, CPU fallback). |
 | `idle.enabled` | `true` | Auto-unload when idle. |
 | `idle.unload_after_s` | `300` | Idle seconds before VRAM is freed. `0`/disabled = always resident. |

@@ -6,8 +6,8 @@ After=network.target
 Type=simple
 User=bob
 WorkingDirectory=/MASTERFOLDER/Services/laya-service
-# Pin to one 3090 so Laya does not contend with vLLM's tensor-parallel across both cards.
-# Card 0 is currently saturated by vLLM; use card 1. Switch back to 0 if vLLM moves.
+# Pin to one 3090 so Laya does not contend with other GPU tenants across both cards.
+# Card 1 is the pin (card 0 hosts other tenants). Switch to 0 if card 1 gets saturated.
 Environment="CUDA_VISIBLE_DEVICES=1"
 # onnxruntime-gpu 1.30 is built against CUDA 13.0; its cuBLAS/cuBLAS-Lt 13 libs live in Ollama's
 # CUDA-13 stack, not on the default LD_LIBRARY_PATH. Without this the CUDA EP silently falls

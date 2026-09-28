@@ -67,10 +67,33 @@ other projects implement against (installable on any machine on the network). In
 - [ ] **Move to a dedicated inference server** (the user may do this): the CLI's `LAYA_ENDPOINT`
       makes this a config change, not a code change. Document the remote setup (port, firewall on
       the 10.23.88.0/24 LAN, TLS if exposed beyond the LAN).
-- [ ] **GPU pinning / co-location**: currently pinned to card 0 via `CUDA_VISIBLE_DEVICES`. If the
-      service moves or shares a box, re-decide which card and whether to add the Chatterbox-style
-      VRAM lock (so ComfyUI knows the card is busy).
+- [ ] **GPU pinning / co-location**: currently pinned to card 1 via `CUDA_VISIBLE_DEVICES` (card 0
+      hosts other tenants). If the service moves or shares a box, re-decide which card and whether
+      to add the Chatterbox-style VRAM lock (so ComfyUI knows the card is busy).
 - [ ] **Ops**: alerting on `/health` (provider fell back to CPU?), log rotation, disk for the cache DB.
+
+### Incident record — transient CUDA-driver wedge (resolved 2026-09-28)
+
+During deployment on 2026-09-28 the service briefly ran on **CPU fallback** because the machine's
+userland CUDA driver was wedged (no process could create a context, not just Laya). It **cleared
+on its own the same day** — no action was required from this repo. Keeping the evidence here so
+the same symptom is recognized fast next time.
+
+Symptoms (when it happened):
+- `nvidia-smi` (kernel module 580.159.03) reported **two** GPUs (`0000:01:00.0`, `0000:03:00.0`),
+  but the process libcuda view showed a phantom device matching neither; root in a fresh shell saw
+  **0** devices.
+- `journalctl -k` showed repeated `NVRM: nvAssertFailedNoLog ... NV_ERR_NO_MEMORY ... vaspace_api.c`
+  / `pool_alloc.c` assertion failures.
+- ORT threw `EP Error ... CUDA failure 100: no CUDA-capable device ; GPU=-1`; the worker fell back
+  to `CPUExecutionProvider` (`/health` → `providers` empty / CPU-only).
+
+Diagnosis + fix: an OS/CUDA-driver-layer fault (userland runtime out of sync with the kernel
+module), **outside this repo**. Confirmed resolved when `libcuda` again reported 2 devices and
+Laya loaded on the GPU (verified 2026-09-28: `/health` → `CUDAExecutionProvider` first,
+`input_tokens` 267). If it recurs, the heavy-handed fix is a driver reload
+(`rmmod nvidia* && modprobe nvidia` or reboot) — but that evicts every other GPU tenant on the box,
+so coordinate a maintenance window first.
 
 ---
 
