@@ -5,7 +5,36 @@ Format follows the embed-server changelog convention.
 
 ---
 
-## [Unreleased] — 2026-09-28 (initial build)
+## [Unreleased] — 2026-09-28 (architecture refactor)
+
+### Added
+- **`src/laya_server/_config.py`** — typed Pydantic config models with validation (port range,
+  positive TTL, path expansion, model_dir existence check). Strict resolution: `LAYA_CONFIG_PATH`
+  → CWD-relative `config/laya_config.json` → raise `FileNotFoundError`.
+- **`src/laya_server/__main__.py`** — enables `python -m laya_server`.
+- **`tests/fixtures.py`** — shared STATE/QUESTIONS test fixtures (single source of truth).
+- **`tests/test_version.py`** — asserts `importlib.metadata.version` matches `__version__`.
+
+### Changed
+- **`server.py` rewritten** as an app factory (`create_app(cfg)`) + runner (`run_server()`).
+  No module-level globals, no import-time side effects. All state on `app.state`.
+- **`pyproject.toml`** — moved `fastapi`/`uvicorn`/`pydantic` from `[server]` extra to core
+  dependencies. Entry point now calls `run_server()`. This is a service package: all runtime
+  deps are installed by default.
+- **`__init__.py`** — removed dead `__getattr__` lazy-export layer.
+- **`bench.py`** — imports STATE/QUESTIONS from `tests/fixtures.py`.
+- **LINK.md** — documented config resolution policy, single uvicorn worker, removed
+  `LAYA_IDLE_UNLOAD_S` (was a daemon-only env var that didn't work).
+
+### Removed
+- **`laya-daemon`** bash script — replaced by systemd unit (production) and `laya-server`
+  foreground command (dev). The `LAYA_IDLE_UNLOAD_S` env var bug is eliminated.
+- **`test_parity.py`** (root script) — replaced by `pytest tests/` which covers the same checks.
+- **`requirements.txt`** — superseded by `pyproject.toml` dependencies.
+
+---
+
+## [Initial build] — 2026-09-28
 
 ### Added
 - **Core service** — FastAPI/uvicorn HTTP server on port **11448** wrapping Laya ONNX inference
@@ -44,3 +73,10 @@ Format follows the embed-server changelog convention.
 - systemd unit **not installed** (awaiting user's sudo; exact commands in LINK.md).
 - CLI client + interface primitives (see ROADMAP).
 - Git repo initialised locally; remote push pending user review.
+
+## 2026-09-28 — Package layout
+
+- Moved application modules into `src/laya_server/`, a named importable Python package.
+- Moved the FastAPI application to `laya_server.server` and added the `laya-server` console entry point.
+- Updated the daemon and systemd launchers, tests, operational scripts, and current documentation to use the package and entry point.
+- Runtime configuration continues to resolve from the repository-level `config/` directory.

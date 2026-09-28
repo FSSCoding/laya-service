@@ -23,12 +23,12 @@ loop, two-tier cache, and a clean start/stop lifecycle.
 
 | Component | File | Responsibility |
 |-----------|------|----------------|
-| HTTP layer | `laya_server.py` | FastAPI/uvicorn app; endpoints; wires the pieces below; lifespan pre-warm + idle reaper. |
-| Worker | `src/worker.py` | `LayaWorker` — owns the `onnxruntime-gpu` `InferenceSession` + tokenizer; builds inputs; runs; applies per-cardinality temperature + softmax; shapes answers exactly as the TS `laya.ts`. |
-| Sequence logic | `src/sequence.py` | Pure, model-free port of the request rendering (sequence layout, option rendering, `pyJsonDumps`, temperature buckets, confidence, softmax, `round4`). Unit-testable without weights. |
-| Batcher | `src/batcher.py` | `RequestBatcher` — asyncio queue + time-window coalescing; merges concurrent requests into one forward pass; dispatches the blocking call to the thread executor. |
-| Cache | `src/result_cache.py` | Two-tier LRU (in-memory) + SQLite; keyed on `sha256(state, questions)` (deterministic results). |
-| Daemon CLI | `laya-daemon` | `start` / `stop` / `status` / `unload` / `restart` — process lifecycle via a PID file (mirrors FSS Chatterbox's `model_daemon.py`). |
+| HTTP layer | `src/laya_server/server.py` | FastAPI app factory (`create_app`) + runner (`run_server`). Endpoints, lifespan lifecycle, idle reaper. Exposed as the `laya-server` console command. |
+| Config | `src/laya_server/_config.py` | Typed Pydantic models (`AppConfig` and sub-models) with validation. Strict resolution: `LAYA_CONFIG_PATH` → CWD-relative → raise. |
+| Worker | `src/laya_server/worker.py` | `LayaWorker` — owns the `onnxruntime-gpu` `InferenceSession` + tokenizer; builds inputs; runs; applies per-cardinality temperature + softmax; shapes answers exactly as the TS `laya.ts`. |
+| Sequence logic | `src/laya_server/sequence.py` | Pure, model-free port of the request rendering (sequence layout, option rendering, `pyJsonDumps`, temperature buckets, confidence, softmax, `round4`). Unit-testable without weights. |
+| Batcher | `src/laya_server/batcher.py` | `RequestBatcher` — asyncio queue + time-window coalescing; merges concurrent requests into one forward pass; dispatches the blocking call to the thread executor. |
+| Cache | `src/laya_server/result_cache.py` | Two-tier LRU (in-memory) + SQLite; keyed on `sha256(state, questions)` (deterministic results). |
 
 ### Data flow
 
@@ -56,23 +56,28 @@ Single process. The ONNX session loads once (pre-warmed at startup), is held whi
 
 ---
 
-## Lifecycle (daemon model)
+## Lifecycle
 
-The `laya-daemon` CLI manages the process; the server manages VRAM. Two independent levels:
+Process lifecycle is managed by systemd (production) or the `laya-server` foreground command (dev).
+The server manages VRAM independently. Two levels:
 
 | Level | Mechanism | Effect |
 |-------|-----------|--------|
-| **Process** | `laya-daemon start/stop` (PID file at `$XDG_RUNTIME_DIR/laya-service/laya.pid`) | Starts/stops the whole HTTP service. `stop` = SIGTERM then SIGKILL. Frees all VRAM. |
-| **VRAM (model)** | Auto idle-unload (`idle.unload_after_s`, default 300 s) **or** `POST /control/unload` / `laya-daemon unload` | Releases the ONNX session's ~2.3 GB VRAM *without* stopping the process. Model re-loads lazily on next request. |
+| **Process** | `systemctl start/stop/restart laya-service` (production) or `laya-server` in foreground (dev) | Starts/stops the whole HTTP service. Stop = SIGTERM, uvicorn drains in-flight requests. Frees all VRAM. |
+| **VRAM (model)** | Auto idle-unload (`idle.unload_after_s`, default 300 s) **or** `POST /control/unload` | Releases the ONNX session's ~2.3 GB VRAM *without* stopping the process. Model **re-loads lazily** on the next `/system_one` request (~0.7 s cold start). `GET /health` reports `"status": "degraded"` and `"model_loaded": false` while unloaded. |
 
 **Why two levels:** the user wants to start/stop the *service* on demand (ComfyUI/vLLM-style). The
 VRAM level additionally means that even while the process is up, an idle service returns its VRAM
 to the GPU after 5 min — so a "leave it running" session doesn't hoard 2.3 GB. Set
 `idle.unload_after_s` to `0`/`idle.enabled=false` to keep it permanently resident.
 
-**Idle tracking:** every `/system_one` (and the batcher callback) updates a last-activity timestamp.
-The `_idle_reaper` task checks every 15 s and unloads when idle ≥ threshold. `GET /health` and
-`/v1/stats` report `idle_s` and `idle_unload_after_s` so clients can see the state.
+**Idle tracking:** every `/system_one` updates a last-activity timestamp. The `_idle_reaper` task
+checks every 60 s and unloads when idle ≥ threshold. `GET /health` reports `model_loaded` so
+operators can distinguish "ready" from "will-be-ready-after-cold-start".
+
+**SIGKILL:** in-flight requests are not checkpointed. If the process is killed without SIGTERM
+(e.g. OOM kill), in-flight requests are lost. This is acceptable for an inference service —
+requests are idempotent and can be retried.
 
 This is the same TTL/idle-shutdown pattern as FSS Chatterbox's `model_daemon.py` (`ttl`,
 `touch()`, auto-shutdown on idle), adapted from a file-queue daemon to an HTTP server.
@@ -141,7 +146,7 @@ with status 422 (validation) or 500 (server). Error `type` ∈ `invalid_request_
 
 ### `POST /control/unload`
 Explicitly free VRAM now (idempotent). Returns `{"status":"unloaded","model_loaded":false}`. The model
-re-loads lazily on the next request. Use `laya-daemon unload` as the shell equivalent.
+re-loads lazily on the next request (~0.7 s cold start).
 
 ---
 

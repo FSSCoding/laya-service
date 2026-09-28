@@ -12,7 +12,7 @@ The **service** is built, verified, and documented:
 - GPU (CUDA) ONNX inference over HTTP on **:11448**, ~20× faster than CPU, decision-identical to the
   reference.
 - Request batching, two-tier cache, idle-unload (VRAM released after 5 min idle or on demand),
-  and a `laya-daemon` start/stop/status/unload CLI.
+  with lazy reload on next request. `laya-server` console command + systemd unit for lifecycle.
 - Docs: README, LINK, SERVICE, CHANGELOG, ROADMAP. Parity + bench tests in-tree.
 
 What is **not** done yet: systemd install (needs sudo), the CLI *client*, interface primitives, and
@@ -28,9 +28,7 @@ a remote repo.
       VRAM is released when idle, or set it permanent for a high-use period. Trivial config flip.
 - [ ] **Repo**: init git (done locally — see below), review with user, then push to Gitea
       (`https://gitea.bobai.com.au/<owner>/laya-service`). Confirm the remote + owner.
-- [ ] Optionally add a **`.gitignore`**-excluded `requirements.txt`/lock for reproducibility
-      (currently deps are in the venv: `onnxruntime-gpu==1.30.0`, `tokenizers`, `fastapi`, `uvicorn`,
-      `numpy`).
+- [ ] Optionally add a **lockfile** for reproducibility (deps are in `pyproject.toml`).
 
 ## Phase 2 — CLI client (the "streamline implementation" goal)
 

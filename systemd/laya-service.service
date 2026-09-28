@@ -18,7 +18,7 @@ Environment="MKL_NUM_THREADS=2"
 Environment="TOKENIZERS_PARALLELISM=false"
 # Reduce CUDA memory fragmentation on the pinned card.
 Environment="PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512"
-ExecStart=/MASTERFOLDER/Services/laya-service/.venv/bin/python /MASTERFOLDER/Services/laya-service/laya_server.py
+ExecStart=/MASTERFOLDER/Services/laya-service/.venv/bin/laya-server
 Restart=on-failure
 RestartSec=5
 Nice=-5

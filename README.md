@@ -26,11 +26,17 @@ to the reference, deterministic, and cache-friendly.
 
 ## Quick start
 
+Install the package (all runtime dependencies are included — this is a service package):
+
 ```bash
-# One-shot parity check (CUDA):
 cd /MASTERFOLDER/Services/laya-service
+.venv/bin/python -m pip install -e ".[dev]"
+```
+
+```bash
+# Parity check (CUDA):
 CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
-  .venv/bin/python test_parity.py
+  .venv/bin/python -m pytest tests/ -v
 
 # Benchmark (CPU vs GPU, single + batched):
 CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
@@ -38,7 +44,7 @@ CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x
 
 # Run the server (foreground):
 CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
-  .venv/bin/python laya_server.py
+  .venv/bin/laya-server
 # → http://0.0.0.0:11448
 ```
 

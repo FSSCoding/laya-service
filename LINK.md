@@ -25,15 +25,16 @@ Read this first when operating or modifying the service on bobai.
 | Thing | Path |
 |-------|------|
 | Service root | `/MASTERFOLDER/Services/laya-service/` |
-| Server entry | `/MASTERFOLDER/Services/laya-service/laya_server.py` |
-| Python source | `/MASTERFOLDER/Services/laya-service/src/` (`worker.py`, `sequence.py`, `batcher.py`, `result_cache.py`) |
+| Python package | `/MASTERFOLDER/Services/laya-service/src/laya_server/` (`server.py`, `_config.py`, `worker.py`, `sequence.py`, `batcher.py`, `result_cache.py`) |
+| Server entry point | `/MASTERFOLDER/Services/laya-service/.venv/bin/laya-server` (`laya_server.server:run_server`) |
 | Config | `/MASTERFOLDER/Services/laya-service/config/laya_config.json` |
 | Venv | `/MASTERFOLDER/Services/laya-service/.venv` |
 | Model bundle (read-only) | `/MASTERFOLDER/Services/laya/onnx/` (`laya.onnx`, `laya.onnx.data`, `laya_config.json`, `tokenizer/`) |
 | Result cache DB | `~/.laya-service/result_cache.db` (SQLite; created at runtime) |
 | systemd unit (source) | `/MASTERFOLDER/Services/laya-service/systemd/laya-service.service` |
 | systemd timer (source) | `/MASTERFOLDER/Services/laya-service/systemd/laya-service-restart.timer` |
-| Test / bench | `/MASTERFOLDER/Services/laya-service/test_parity.py`, `bench.py` |
+| Tests | `/MASTERFOLDER/Services/laya-service/tests/` (pytest) |
+| Benchmark | `/MASTERFOLDER/Services/laya-service/bench.py` |
 | Research/design doc | `/MASTERFOLDER/Services/laya/docs/LAYA-GPU-SERVICE.md` |
 
 > The model bundle is **not** owned by this repo — it lives in the `laya` library repo and is
@@ -79,6 +80,21 @@ To verify CUDA is actually active after a change: `GET /health` → `providers` 
 | `TOKENIZERS_PARALLELISM` | `false` | Avoid tokenizers warning + redundant threads. |
 | `PYTORCH_CUDA_ALLOC_CONF` | `max_split_size_mb:512` | Inherited from embed-server; harmless (ORT doesn't use torch) — keep for consistency. |
 
+### Application config resolution
+
+The server reads **one** env var: `LAYA_CONFIG_PATH`. All other configuration comes from the JSON
+config file. Resolution order (strict — no silent fallback):
+
+1. `LAYA_CONFIG_PATH` env var, if set
+2. `config/laya_config.json` relative to CWD, if it exists
+3. Raise `FileNotFoundError`
+
+The systemd unit sets `WorkingDirectory=/MASTERFOLDER/Services/laya-service`, so the CWD-relative
+resolution finds `config/laya_config.json` without needing `LAYA_CONFIG_PATH`.
+
+Do NOT set env vars like `LAYA_IDLE_UNLOAD_S` or `LAYA_PORT` — the server does not read them.
+All runtime tunables are in the JSON config file.
+
 ---
 
 ## Running
@@ -87,11 +103,23 @@ To verify CUDA is actually active after a change: `GET /health` → `providers` 
 
 ```bash
 cd /MASTERFOLDER/Services/laya-service
+.venv/bin/python -m pip install -e .
+
 CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
-  .venv/bin/python laya_server.py
+  .venv/bin/laya-server
+```
+
+Or via `python -m`:
+
+```bash
+CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
+  .venv/bin/python -m laya_server
 ```
 
 ### systemd (production)
+
+The unit runs the installed `laya-server` console command. Ensure the package is installed in the
+service venv with `.venv/bin/python -m pip install -e .` before enabling it.
 
 The unit sources are in `systemd/`. Install (needs sudo — hand to user / run via `sudo-gui`):
 
@@ -105,6 +133,10 @@ sudo-gui systemctl enable --now laya-service-restart.timer
 
 Resource caps in the unit: `MemoryMax=8G`, `CPUQuota=300%`, `Nice=-5`, `Restart=on-failure`,
 `RestartSec=5`. The weekly timer reclaims fragmented CUDA memory (mirrors embed-server).
+
+**Single uvicorn worker.** The unit does not set `workers=` (defaults to 1). Each worker process
+loads its own ONNX session (~2.3 GB VRAM). Running multiple workers would duplicate the VRAM
+footprint. This is intentional for a single-card GPU service.
 
 > **Port conflict:** if a foreground instance is already bound to 11448, stop it before enabling the
 > unit (two processes can't share the port). Check with `ss -tlnp | grep 11448`.
@@ -123,7 +155,7 @@ curl -s http://127.0.0.1:11448/v1/stats
 # parity gate (decision-identical to CPU reference; run from the service dir)
 cd /MASTERFOLDER/Services/laya-service
 CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
-  .venv/bin/python test_parity.py
+  .venv/bin/python -m pytest tests/ -v
 
 # benchmark
 CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu \
@@ -148,5 +180,7 @@ Do NOT assert exact 4-decimal equality between CPU and GPU — that's not achiev
   LRU. To clear: stop the service and delete the DB (or set `cache.enabled=false` in config).
 - **Pinned to one card.** If vLLM or another tenant saturates card 0, switch
   `CUDA_VISIBLE_DEVICES` to `1` (and restart).
-- **Re-verify after any ORT/model change**: run `test_parity.py` and check `/health` providers.
+- **Re-verify after any ORT/model change**: run `pytest tests/` and check `/health` providers.
 - This service is **read-only** with respect to the `laya` repo (it reads the bundle, never writes).
+- **Config validation**: the server validates the config file at startup (port range, positive TTL,
+  model_dir existence). A missing or invalid config fails at startup with a clear error message.

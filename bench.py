@@ -10,40 +10,24 @@ Measures:
   * a heavy single request (many questions) to show per-token scaling
 
 Run with CUDA on the pinned card:
-  CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13 ... .venv/bin/python bench.py
+  CUDA_VISIBLE_DEVICES=0 \\
+  LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13 ... \\
+  .venv/bin/python bench.py
 """
 from __future__ import annotations
 
-import asyncio
 import statistics
 import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent / "tests"))
 
-import onnxruntime as ort  # noqa: E402
+from fixtures import QUESTIONS, STATE  # noqa: E402
 
-from src.worker import LayaWorker  # noqa: E402
+from laya_server.worker import LayaWorker  # noqa: E402
 
 MODEL_DIR = "/MASTERFOLDER/Services/laya/onnx"
-
-STATE = {
-    "subject": "Refund not received",
-    "body": (
-        "I cancelled my subscription two weeks ago and I still have not received my refund. "
-        "This is the third time I am writing. If this is not resolved I will dispute the charge with my bank."
-    ),
-}
-QUESTIONS = {
-    "department": {
-        "type": "choice",
-        "instructions": "Which team should handle this ticket?",
-        "criteria": {"billing": "payments, refunds, invoices", "support": "product help and bugs", "sales": "new purchases and upgrades"},
-    },
-    "urgency": {"type": "score", "instructions": "How urgent is this ticket?", "criteria": ["not urgent", "somewhat urgent", "urgent", "critical"]},
-    "churn_risk": {"type": "noul", "instructions": "Is the customer likely to cancel or dispute?"},
-}
 
 
 def build_questions(n: int) -> dict:
@@ -58,7 +42,13 @@ def build_questions(n: int) -> dict:
     return qs
 
 
-def bench_one(providers_label: str, providers: list, single_qs: dict, n_concurrent: int, n_heavy: int):
+def bench_one(
+    providers_label: str,
+    providers: list,
+    single_qs: dict,
+    n_concurrent: int,
+    n_heavy: int,
+):
     print(f"\n=== {providers_label} ===")
     t0 = time.time()
     w = LayaWorker(MODEL_DIR, execution_providers=providers)
@@ -75,7 +65,10 @@ def bench_one(providers_label: str, providers: list, single_qs: dict, n_concurre
         w.system_one(STATE, QUESTIONS)
         ts.append(time.time() - s)
     single = min(ts)
-    print(f"  single (3q), best of 5: {single * 1000:.1f} ms   (mean {statistics.mean(ts) * 1000:.1f} ms)")
+    print(
+        f"  single (3q), best of 5: {single * 1000:.1f} ms   "
+        f"(mean {statistics.mean(ts) * 1000:.1f} ms)"
+    )
 
     # 2) N concurrent payloads coalesced into ONE executor call (batcher behaviour)
     payloads = [{"state": STATE, "questions": QUESTIONS} for _ in range(n_concurrent)]
@@ -92,7 +85,11 @@ def bench_one(providers_label: str, providers: list, single_qs: dict, n_concurre
         run_batch()
         bs.append(time.time() - s)
     total = min(bs)
-    print(f"  batch {n_concurrent} concurrent (one pass): total {total * 1000:.1f} ms  => {total / n_concurrent * 1000:.1f} ms per request  (mean {statistics.mean(bs) * 1000:.1f} ms)")
+    print(
+        f"  batch {n_concurrent} concurrent (one pass): total {total * 1000:.1f} ms  "
+        f"=> {total / n_concurrent * 1000:.1f} ms per request  "
+        f"(mean {statistics.mean(bs) * 1000:.1f} ms)"
+    )
 
     # 3) heavy single request (many questions in one call)
     heavy_qs = build_questions(n_heavy)
@@ -102,10 +99,19 @@ def bench_one(providers_label: str, providers: list, single_qs: dict, n_concurre
         s = time.time()
         w.system_one(STATE, heavy_qs)
         hs.append(time.time() - s)
-    print(f"  single heavy ({n_heavy} questions, one pass): {min(hs) * 1000:.1f} ms  (mean {statistics.mean(hs) * 1000:.1f} ms)")
+    print(
+        f"  single heavy ({n_heavy} questions, one pass): {min(hs) * 1000:.1f} ms  "
+        f"(mean {statistics.mean(hs) * 1000:.1f} ms)"
+    )
 
     w.release()
-    return {"load_s": load_s, "single_ms": single * 1000, "batch_total_ms": total * 1000, "per_req_ms": total / n_concurrent * 1000, "heavy_ms": min(hs) * 1000}
+    return {
+        "load_s": load_s,
+        "single_ms": single * 1000,
+        "batch_total_ms": total * 1000,
+        "per_req_ms": total / n_concurrent * 1000,
+        "heavy_ms": min(hs) * 1000,
+    }
 
 
 def main() -> int:

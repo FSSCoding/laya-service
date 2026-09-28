@@ -1,9 +1,0 @@
-# Inference (core package)
-onnxruntime-gpu>=1.30.0
-tokenizers>=0.20.0
-numpy>=1.26.0
-
-# HTTP server (laya_server.py entry point)
-fastapi>=0.115.0
-uvicorn[standard]>=0.34.0
-pydantic>=2.0.0

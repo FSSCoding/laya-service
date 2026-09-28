@@ -6,8 +6,7 @@ Acceptance bar:
   * per-probability values within TOL (CPU vs CUDA FP32 non-determinism ~1e-4)
 """
 import pytest
-
-from tests.conftest import QUESTIONS, STATE
+from conftest import QUESTIONS, STATE
 
 TOL = 1e-3
 
