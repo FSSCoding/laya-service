@@ -9,9 +9,9 @@ Subcommands:
   stats     Show service statistics
   unload    Unload model from GPU
   version   Print version
-  start     systemctl --user start laya-service
-  stop      systemctl --user stop laya-service
-  restart   systemctl --user restart laya-service
+  start     systemctl start laya-service        (system unit, root for start)
+  stop      systemctl stop laya-service
+  restart   systemctl restart laya-service
   status    Combined systemd + health state
 """
 
@@ -101,8 +101,13 @@ def _print_answers(data: dict) -> None:
 
 
 def _run_systemctl(args: list[str]) -> tuple[int, str]:
-    """Run a systemctl --user command. Returns (returncode, output)."""
-    cmd = ["systemctl", "--user"] + args
+    """Run a systemctl command (system unit). Returns (returncode, output).
+
+    The laya-service unit is installed as a SYSTEM unit (/etc/systemd/system/),
+    so no --user flag is used. Requires root for start/stop/restart; status is
+    readable by any user.
+    """
+    cmd = ["systemctl"] + args
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
         return result.returncode, result.stdout.strip() + result.stderr.strip()
@@ -239,7 +244,7 @@ def version():
 
 @cli.command("start")
 def start():
-    """Start the laya-service (systemctl --user)."""
+    """Start the laya-service (system unit; requires root)."""
     rc, output = _run_systemctl(["start", "laya-service"])
     if rc != 0:
         click.echo(f"✗ Failed to start: {output}", err=True)
@@ -249,7 +254,7 @@ def start():
 
 @cli.command("stop")
 def stop():
-    """Stop the laya-service (systemctl --user)."""
+    """Stop the laya-service (system unit; requires root)."""
     rc, output = _run_systemctl(["stop", "laya-service"])
     if rc != 0:
         click.echo(f"✗ Failed to stop: {output}", err=True)
@@ -259,7 +264,7 @@ def stop():
 
 @cli.command("restart")
 def restart():
-    """Restart the laya-service (systemctl --user)."""
+    """Restart the laya-service (system unit; requires root)."""
     rc, output = _run_systemctl(["restart", "laya-service"])
     if rc != 0:
         click.echo(f"✗ Failed to restart: {output}", err=True)
