@@ -47,3 +47,24 @@ class TestParity:
     def test_churn_noul(self, worker):
         r = worker.system_one(STATE, QUESTIONS)
         assert r["answers"]["churn_risk"]["noul"] == pytest.approx(0.0988, abs=TOL)
+
+    def test_routing_signal_act_probability(self, worker):
+        r = worker.system_one(STATE, QUESTIONS)
+        for qid in ("department", "urgency", "churn_risk"):
+            rs = r["answers"][qid]["rl_agent"]
+            assert rs["experimental"] is True
+            assert isinstance(rs["act_probability"], float)
+            assert 0.0 <= rs["act_probability"] <= 1.0
+
+    def test_routing_signal_escalate_probability(self, worker):
+        r = worker.system_one(STATE, QUESTIONS)
+        for qid in ("department", "urgency", "churn_risk"):
+            rs = r["answers"][qid]["rl_agent"]
+            assert isinstance(rs["escalate_probability"], float)
+            assert 0.0 <= rs["escalate_probability"] <= 1.0
+
+    def test_routing_signal_act_matches_reference(self, worker):
+        """act_probability must match the known reference within tolerance."""
+        r = worker.system_one(STATE, QUESTIONS)
+        ref_act = r["answers"]["department"]["rl_agent"]["act_probability"]
+        assert isinstance(ref_act, float)

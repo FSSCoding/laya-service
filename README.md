@@ -49,7 +49,7 @@ CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x
 ```
 
 The `LD_LIBRARY_PATH` is **required for CUDA** — without it the CUDA EP silently falls back to CPU
-(`libcublasLt.so.13` not found). See [LINK.md](LINK.md) §"CUDA 13 library path".
+(`libcublasLt.so.13` not found). See [QWEN.md](QWEN.md) §"CUDA 13 library path".
 
 ---
 
@@ -59,8 +59,19 @@ The `laya` CLI is the primary interface for humans and scripts, and the sole own
 lifecycle:
 
 ```bash
+# Typed primitives
+laya choice --state '{"subject":"Refund"}' --instructions "Which team?" \
+            --options '{"billing":"payments","support":"help"}' --json
+laya score  --state '{"subject":"Refund"}' --instructions "How urgent?" \
+            --levels '["not urgent","somewhat","urgent","critical"]' --json
+laya noul   --state '{"subject":"Refund"}' --statement "Likely to cancel?" --json
+laya batch  --state '{"subject":"Refund"}' --questions '<json>' --json
+
+# Raw query (hand-built question shape)
 laya query --state '{"subject":"Refund"}' \
           --questions '{"urgency":{"type":"score","instructions":"How urgent?","criteria":["low","med","high"]}}'
+
+# Operations
 laya health
 laya stats
 laya status --json      # stable schema for automation
@@ -70,14 +81,65 @@ laya restart
 laya unload             # free ~2.4 GB VRAM; lazily reloads on next query
 ```
 
-Subcommands: `serve`, `query`, `health`, `stats`, `unload`, `version`, `start`, `stop`,
-`restart`, `status`. `start`/`stop`/`restart` manage the **system** unit (no `--user`) and
-require root (route through `sudo-gui`); `status` is readable by any user.
+Subcommands: `serve`, `query`, `choice`, `score`, `noul`, `batch`, `health`, `stats`,
+`unload`, `version`, `start`, `stop`, `restart`, `status`. `start`/`stop`/`restart` manage
+the **system** unit (no `--user`) and require root (route through `sudo-gui`); `status` is
+readable by any user.
 
 Endpoint resolution: `--endpoint` flag → `LAYA_ENDPOINT` env → `http://127.0.0.1:11448`.
 
 Exit codes: `laya health` → 0=ok, 1=degraded, 2=unreachable. `laya status` → 0=healthy,
 1=degraded (model unloaded), 2=unreachable/unknown, 3=stopped.
+
+---
+
+## Python primitives
+
+Importable from `laya_server.primitives` (or directly from `laya_server`). All primitives
+return frozen dataclasses and accept an optional `endpoint` argument.
+
+```python
+from laya_server import laya_choice, laya_score, laya_noul, laya_batch
+from laya_server import classify, multi_select, rank
+
+# Native wrappers
+result = laya_choice(state, "Which team?", {"billing": "payments", "support": "help"})
+# → ChoiceResult(choice="billing", probabilities={...}, confidence=0.76, routing_signal=...)
+
+result = laya_score(state, "How urgent?", ["low", "med", "high", "critical"])
+# → ScoreResult(score=1.39, legend={...}, probabilities={...}, confidence=..., routing_signal=...)
+
+result = laya_noul(state, "Is the customer likely to cancel?")
+# → NoulResult(noul=0.099, routing_signal=...)
+
+# Batch: many mixed-type questions, one forward pass
+result = laya_batch(state, {
+    "dept":  {"type": "choice", "instructions": "Which team?", "criteria": {...}},
+    "urg":   {"type": "score", "instructions": "How urgent?", "criteria": [...]},
+    "churn": {"type": "noul", "instructions": "Likely to cancel?"},
+})
+# → BatchResult(answers={"dept": ChoiceResult(...), "urg": ScoreResult(...), ...})
+
+# Composed helpers
+result = classify(state, "Classify this ticket", ["urgent", "normal", "low"])
+result = multi_select(state, "Which tags apply?", ["billing", "escalation", "refund", "bug"])
+result = rank(state, "Urgency", ["ticket-A", "ticket-B", "ticket-C"], rubric=["low", "med", "high"])
+# rank returns [(item, ScoreResult), ...] sorted desc by score
+```
+
+### Routing signal (experimental)
+
+Every answer carries a `routing_signal` from the model's separate RL-trained head:
+
+```python
+result.routing_signal
+# → RoutingSignal(act_probability=1.0, escalate_probability=0.0, experimental=True)
+```
+
+- `act_probability` — P(the model should act on this answer). Useful for confidence-gating.
+- `escalate_probability` — P(the model thinks this should be handed off). Experimental.
+- `experimental: True` — unmistakable marker. Do NOT build production routing logic on this
+  without validating the calibration for your domain.
 
 ---
 
@@ -165,7 +227,7 @@ unloaded — that's normal after idle, not a fault.
 | File | What it is |
 |------|-----------|
 | [README.md](README.md) | This file — entry point, quick start, API, resources. |
-| [LINK.md](LINK.md) | Deploy paths, port, env, systemd, CUDA-13 gotcha, ops. The canonical how-it-runs. |
+| [QWEN.md](QWEN.md) | Agent context: architecture, deploy paths, port, env, systemd, CUDA-13 gotcha, ops. The canonical how-it-runs. |
 | [SERVICE.md](SERVICE.md) | Architecture, components, HTTP contract, data flow, tuning knobs. |
 | [CHANGELOG.md](CHANGELOG.md) | Dated change log. |
 | [ROADMAP.md](ROADMAP.md) | Planned work (CLI, client libs, primitives, deploy). |
@@ -173,7 +235,7 @@ unloaded — that's normal after idle, not a fault.
 
 ---
 
-## Status (2026-09-28)
+## Status (2026-09-29)
 
 - ✅ Built & verified: parity (decision-identical), CUDA active, ~20× speedup, batching, caching.
 - ✅ Docs written.
@@ -182,8 +244,7 @@ unloaded — that's normal after idle, not a fault.
       `CUDA_VISIBLE_DEVICES=1`.
 - ✅ `laya` CLI in venv (`.venv/bin/laya`), sole owner of systemd lifecycle.
 - ✅ MCP server (`~/.qwen/mcp-servers/laya.js`, registered in `~/.qwen/settings.json`).
-- ✅ Repo pushed: `https://gitea.bobai.com.au/foxadmin/laya-service.git` (`master @ b59eced`,
-      clean tree).
-- ⬜ Interface primitives (typed `laya_choice`/`laya_score`/`laya_noul` wrappers, batch
-      primitive) — see ROADMAP.md Phase 3.
+- ✅ Repo pushed: `https://gitea.bobai.com.au/foxadmin/laya-service.git`.
+- ✅ **Typed primitives layer** — `laya_server.primitives` (native 3 + batch + composed helpers),
+      CLI verbs (`laya choice/score/noul/batch`), experimental routing signal. 70 tests, all green.
 - ⬜ Remote deployment / ops (alerting, log rotation, cache-DB disk) — ROADMAP.md Phase 4.

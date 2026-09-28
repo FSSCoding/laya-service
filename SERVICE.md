@@ -1,7 +1,7 @@
 # Laya GPU Inference Service — Architecture & Service Spec
 
 This document describes *how* the service is built: components, data flow, the HTTP contract in
-detail, tuning knobs, and the daemon/lifecycle model. For deploy/ops details see [LINK.md](LINK.md);
+detail, tuning knobs, and the daemon/lifecycle model. For deploy/ops details see [QWEN.md](QWEN.md);
 for the original design rationale see [`../laya/docs/LAYA-GPU-SERVICE.md`](../laya/docs/LAYA-GPU-SERVICE.md).
 
 ---
@@ -180,5 +180,5 @@ deliberately, and re-run `test_parity.py` (they break parity with the reference)
 - **Determinism + cache:** results are deterministic for a given `(state, questions)`, so the
   content-addressed cache is safe. Repeat requests are served from memory (~6 ms).
 - **CUDA lib path:** the CUDA EP silently falls back to CPU unless
-  `LD_LIBRARY_PATH` includes `/usr/local/lib/ollama/cuda_v13` (see LINK.md). Verify via
+  `LD_LIBRARY_PATH` includes `/usr/local/lib/ollama/cuda_v13` (see QWEN.md). Verify via
   `/health` → `providers` must list `CUDAExecutionProvider` first.

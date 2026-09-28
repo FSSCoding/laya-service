@@ -60,21 +60,34 @@ Remaining / not yet:
 - [ ] Optionally a **`laya bench`** subcommand (currently benchmarking is via the standalone
       `bench.py`, not a CLI verb).
 
-## Phase 3 — interface primitives (so primitives aren't rebuilt every time)
+## Phase 3 — interface primitives (DONE — typed primitives layer in `laya_server`)
 
-"Build in a few easier-to-interface-with variations of how this tool can be used." Intended:
+Built as `src/laya_server/primitives.py`, importable from the package. Native wrappers,
+batch primitive, composed helpers, experimental routing signal, and CLI verbs.
 
-- [ ] **Typed client functions** exposing each question type as a first-class primitive, e.g.:
-  - `laya_choice(state, instructions, options: dict|list) -> {choice, probabilities, confidence}`
-  - `laya_score(state, instructions, levels: list) -> {score, legend, probabilities}`
-  - `laya_noul(state, statement) -> {noul}`  (P(true) of a yes/no statement)
-  These wrap `/system_one` so callers don't hand-build the request shape each time.
-- [ ] **Batch primitive**: one call that takes many questions and returns all answers (the
-  efficiency win — grouping questions into one forward pass).
-- [ ] Optionally a **small library** (Python) bundling these, importable from other FSS projects —
-  the "template" the user described. Keep it thin; the GPU work stays server-side.
-- [ ] Consider a **Node.js client** only if a Node project needs it (the lib at `../laya` is Node;
-  a thin HTTP client there would let both ecosystems share the same GPU service).
+- [x] **Routing signal** — every answer now carries `rl_agent.routing_signal` with
+      `act_probability`, `escalate_probability`, and `experimental: True`. The escalate
+      head (`act_probs[1]`) is exposed under an unmistakable experimental flag.
+- [x] **Native wrappers** — `laya_choice`, `laya_score`, `laya_noul`: thin typed wrappers
+      over `/system_one` that return frozen dataclasses (`ChoiceResult`, `ScoreResult`,
+      `NoulResult`).
+- [x] **Batch primitive** — `laya_batch`: one forward pass for many mixed-type questions.
+      Returns `BatchResult` with per-qid dataclass answers.
+- [x] **Composed helpers** — `classify` (sugar over choice), `multi_select` (batched noul
+      per candidate, returns full probability dict), `rank` (independent score per item
+      against a shared caller-supplied rubric, sorted desc by expected value).
+- [x] **CLI verbs** — `laya choice`, `laya score`, `laya noul`, `laya batch` with
+      `--json` flag for structured output.
+- [x] **Tests** — 22 new tests (primitives, CLI for new verbs, routing signal in parity /
+      contract / integration). Full suite: 70 tests, all green.
+- [x] **Decision/query inversion** — documented and testable via the primitives (pose the
+      same problem as choice vs. multi_select and compare). No helper shipped yet.
+
+Remaining / not yet:
+- [ ] **Composed CLI verbs** for classify, multi_select, rank — Python-only for now; add
+      CLI verbs only if they prove genuinely convenient during use.
+- [ ] **Node.js client** — the lib at `../laya` is Node; a thin HTTP client there would let
+      both ecosystems share the same GPU service.
 
 ## Phase 4 — deployment / multi-machine
 
@@ -117,7 +130,8 @@ so coordinate a maintenance window first.
    a high-use period? Trivial config flip (`idle.unload_after_s`).
 2. ~~**CLI form**~~ — **resolved**: the `laya` CLI ships as part of the `laya_server` package
    (editable install into the service venv). Cross-machine install path is still open (see Phase 2).
-3. **Primitives** — pure CLI subcommands, or also an importable Python library? (and a Node client?)
+3. ~~**Primitives**~~ — **resolved**: `laya_server.primitives` module (native 3 + batch +
+   composed helpers) and CLI verbs (`laya choice/score/noul/batch`). See Phase 3.
 4. **Remote** — move off bobai now or keep it here until there's another machine? (CLI already
    supports a remote endpoint via `LAYA_ENDPOINT`.)
 5. ~~**Repo**~~ — **resolved**: pushed to `https://gitea.bobai.com.au/foxadmin/laya-service.git`.

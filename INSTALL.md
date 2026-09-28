@@ -11,7 +11,7 @@ no placeholders. If a step fails, the troubleshooting section maps the real erro
 
 This doc covers **deploying the systemd service** (production). For the dev
 foreground loop, the test suite, and the CUDA library gotcha in detail, see
-`LINK.md`. For the HTTP API contract and architecture, see `SERVICE.md`.
+`QWEN.md`. For the HTTP API contract and architecture, see `SERVICE.md`.
 
 ---
 
@@ -263,7 +263,7 @@ curl -s http://127.0.0.1:11448/health   # confirm CUDAExecutionProvider first
 
 ## See also
 
-- `LINK.md` — full ops reference: paths, environment, the CUDA-13 gotcha in
+- `QWEN.md` — full ops reference: paths, environment, the CUDA-13 gotcha in
   depth, resource footprint, deploy notes.
 - `SERVICE.md` — components, API contract, data flow, tuning.
 - `README.md` — overview + quick start.

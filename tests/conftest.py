@@ -31,7 +31,11 @@ def _make_mock_worker() -> MagicMock:
             "test_q": {
                 "type": "noul",
                 "noul": 0.5,
-                "rl_agent": {"act_probability": 1.0},
+                "rl_agent": {
+                    "act_probability": 1.0,
+                    "escalate_probability": 0.0,
+                    "experimental": True,
+                },
             }
         },
         "usage": {"input_tokens": 100, "output_tokens": 0},

@@ -5,6 +5,42 @@ Format follows the embed-server changelog convention.
 
 ---
 
+## [0.3.0] — 2026-09-29 (typed primitives layer)
+
+### Added
+- **`src/laya_server/primitives.py`** — typed primitives module: native wrappers
+  (`laya_choice`, `laya_score`, `laya_noul`), heterogeneous batch (`laya_batch`), and
+  composed helpers (`classify`, `multi_select`, `rank`). All return frozen dataclasses
+  (`ChoiceResult`, `ScoreResult`, `NoulResult`, `BatchResult`, `RoutingSignal`).
+- **Routing signal** — every answer now carries `rl_agent` with `act_probability`,
+  `escalate_probability`, and `experimental: True`. The escalate head (P(Escalate)) is
+  exposed under an unmistakable experimental flag.
+- **CLI verbs** — `laya choice`, `laya score`, `laya noul`, `laya batch` with `--json`
+  flag for structured output. Composed helpers are Python-only for now.
+- **`tests/test_primitives.py`** — 22 new tests: native wrappers, batch, composed helpers,
+  inversion-comparison pattern.
+- **`rank` semantics** — independent score per item against a **shared caller-supplied
+  rubric**. The item name is embedded into per-item instructions so every candidate is
+  evaluated against an identical scale. Full per-level distributions preserved.
+
+### Changed
+- **`worker.py`** — `rl_agent` field changed from `{act_probability}` to a `routing_signal`
+  envelope `{act_probability, escalate_probability, experimental}`. Backwards-compatible
+  for consumers reading `answer["rl_agent"]["act_probability"]`.
+- **`__init__.py`** — re-exports the public primitives and result dataclasses.
+- **`cli.py`** — `_print_answers` updated for the new routing signal shape; text output
+  now shows routing: act/escalate probabilities and (experimental) marker.
+- **`pyproject.toml`** — version 0.2.0 → 0.3.0.
+
+### Deferred (documented, not built)
+- OpenAI/chat-shaped adapter with pseudo-model names — may be explored later for
+  low-friction remote experimentation.
+- Raw logits exposure.
+- Pairwise ranking as alternative strategy for `rank`.
+- Inversion helper (the pattern is documented and testable via the primitives).
+
+---
+
 ## [0.2.0] — 2026-09-28 (next pass: client, CLI, MCP, tests)
 
 ### Added

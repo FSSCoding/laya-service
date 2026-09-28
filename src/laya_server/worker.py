@@ -151,7 +151,13 @@ class LayaWorker:
                 or 1.0
             )
             p = softmax([v / temp for v in logits[r, :k].tolist()])
-            ext = {"act_probability": float(act[r, 0]) if n_act else 0.0}
+            routing = {
+                "act_probability": _round4(float(act[r, 0])) if n_act else 0.0,
+                "escalate_probability": (
+                    _round4(float(act[r, 1])) if n_act >= 2 else 0.0
+                ),
+                "experimental": True,
+            }
             qt = it["q"]["t"]
             if qt == "choice":
                 keys = list(dict(it["q"]["crit"]).keys())
@@ -161,7 +167,7 @@ class LayaWorker:
                     "choice": keys[best],
                     "probabilities": {kk: _round4(p[i]) for i, kk in enumerate(keys)},
                     "confidence": _round4(confidence_from_probs(p)),
-                    "rl_agent": ext,
+                    "rl_agent": routing,
                 }
             elif qt == "score":
                 crit = it["q"]["crit"]
@@ -171,10 +177,14 @@ class LayaWorker:
                     "legend": {str(i): c for i, c in enumerate(crit)},
                     "probabilities": {str(i): _round4(v) for i, v in enumerate(p)},
                     "confidence": _round4(confidence_from_probs(p)),
-                    "rl_agent": ext,
+                    "rl_agent": routing,
                 }
             else:
-                answers[qid] = {"type": "noul", "noul": _round4(p[1]), "rl_agent": ext}
+                answers[qid] = {
+                    "type": "noul",
+                    "noul": _round4(p[1]),
+                    "rl_agent": routing,
+                }
 
         return {
             "model": "laya",

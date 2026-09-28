@@ -57,6 +57,13 @@ class TestIntegration:
             assert "answers" in body
             assert body["cached"] is False
 
+            # Routing signal carried through the full path
+            for qid, answer in body["answers"].items():
+                rs = answer["rl_agent"]
+                assert "act_probability" in rs
+                assert "escalate_probability" in rs
+                assert rs["experimental"] is True
+
             # Stats should reflect the request
             stats = client.get("/v1/stats").json()
             assert stats["total_requests"] >= 1

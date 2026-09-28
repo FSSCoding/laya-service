@@ -17,6 +17,7 @@ Subcommands:
 
 from __future__ import annotations
 
+import dataclasses
 import json
 import subprocess
 import sys
@@ -86,16 +87,27 @@ def _print_answers(data: dict) -> None:
         qtype = answer.get("type", "?")
         click.echo(f"\n{qid} ({qtype}):")
         if qtype == "choice":
-            for choice, prob in answer.get("choices", {}).items():
+            click.echo(f"  → {answer.get('choice', '?')}")
+            for label, prob in answer.get("probabilities", {}).items():
                 bar = "█" * int(prob * 30)
-                click.echo(f"  {choice}: {prob:.4f} {bar}")
+                click.echo(f"    {label}: {prob:.4f} {bar}")
+            click.echo(f"  confidence: {answer.get('confidence', 0):.4f}")
         elif qtype == "score":
             click.echo(f"  score: {answer.get('score', 0):.4f}")
+            for lvl, prob in answer.get("probabilities", {}).items():
+                bar = "█" * int(prob * 30)
+                click.echo(f"    {lvl}: {prob:.4f} {bar}")
+            click.echo(f"  confidence: {answer.get('confidence', 0):.4f}")
         elif qtype == "noul":
             click.echo(f"  noul: {answer.get('noul', 0):.4f}")
-            agent = answer.get("rl_agent", {})
-            if agent:
-                click.echo(f"  rl_agent.act_probability: {agent.get('act_probability', 0):.4f}")
+        routing = answer.get("rl_agent", {})
+        if routing:
+            click.echo(
+                f"  routing: act={routing.get('act_probability', 0):.4f} "
+                f"escalate={routing.get('escalate_probability', 0):.4f}"
+            )
+            if routing.get("experimental"):
+                click.echo("  (experimental)")
     if data.get("cached"):
         click.echo("\n(cached)")
 
@@ -160,6 +172,176 @@ def query(state_val: str, questions_val: str, as_json: bool, endpoint: str | Non
         click.echo(json.dumps(result, indent=2))
     else:
         _print_answers(result)
+
+
+@cli.command()
+@click.option("--state", "state_val", required=True, help="JSON string or file path")
+@click.option("--instructions", required=True, help="Question instructions")
+@click.option(
+    "--options", "options_val", required=True,
+    help='JSON dict {"label":"desc",...} or list ["a","b"]',
+)
+@click.option("--json", "as_json", is_flag=True, default=False, help="Raw JSON output")
+@click.option("--endpoint", default=None, help="Service endpoint URL")
+def choice(state_val: str, instructions: str, options_val: str, as_json: bool, endpoint: str | None):
+    """Typed choice: pick one option."""
+    from .primitives import laya_choice
+
+    state = _parse_input(state_val)
+    options = _parse_input(options_val)
+    if isinstance(options, list):
+        options = {label: None for label in options}
+    if not isinstance(options, dict):
+        raise click.ClickException("--options must be a JSON dict or list")
+
+    try:
+        result = laya_choice(state, instructions, options, endpoint=endpoint)
+    except (ConnectionError, TimeoutError) as e:
+        raise click.ClickException(str(e))
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
+
+    if as_json:
+        click.echo(json.dumps(dataclasses.asdict(result), indent=2))
+    else:
+        click.echo(f"→ {result.choice}")
+        for label, prob in result.probabilities.items():
+            bar = "█" * int(prob * 30)
+            click.echo(f"  {label}: {prob:.4f} {bar}")
+        click.echo(f"confidence: {result.confidence:.4f}")
+        rs = result.routing_signal
+        click.echo(
+            f"routing: act={rs.act_probability:.4f} "
+            f"escalate={rs.escalate_probability:.4f} (experimental)"
+        )
+
+
+@cli.command()
+@click.option("--state", "state_val", required=True, help="JSON string or file path")
+@click.option("--instructions", required=True, help="Question instructions")
+@click.option(
+    "--levels", "levels_val", required=True,
+    help='JSON list ["low","med","high"] (ordered, index 0 = lowest)',
+)
+@click.option("--json", "as_json", is_flag=True, default=False, help="Raw JSON output")
+@click.option("--endpoint", default=None, help="Service endpoint URL")
+def score(state_val: str, instructions: str, levels_val: str, as_json: bool, endpoint: str | None):
+    """Typed score: expected level on an ordered rubric."""
+    from .primitives import laya_score
+
+    state = _parse_input(state_val)
+    levels = _parse_input(levels_val)
+    if not isinstance(levels, list) or len(levels) < 2:
+        raise click.ClickException("--levels must be a JSON list with ≥2 items")
+
+    try:
+        result = laya_score(state, instructions, levels, endpoint=endpoint)
+    except (ConnectionError, TimeoutError) as e:
+        raise click.ClickException(str(e))
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
+
+    if as_json:
+        click.echo(json.dumps(dataclasses.asdict(result), indent=2))
+    else:
+        click.echo(f"score: {result.score:.4f}")
+        for lvl, prob in result.probabilities.items():
+            bar = "█" * int(prob * 30)
+            click.echo(f"  {lvl}: {prob:.4f} {bar}")
+        click.echo(f"confidence: {result.confidence:.4f}")
+        rs = result.routing_signal
+        click.echo(
+            f"routing: act={rs.act_probability:.4f} "
+            f"escalate={rs.escalate_probability:.4f} (experimental)"
+        )
+
+
+@cli.command()
+@click.option("--state", "state_val", required=True, help="JSON string or file path")
+@click.option("--statement", required=True, help="Yes/no statement")
+@click.option("--true-desc", default=None, help="Description of 'true'")
+@click.option("--false-desc", default=None, help="Description of 'false'")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Raw JSON output")
+@click.option("--endpoint", default=None, help="Service endpoint URL")
+def noul(
+    state_val: str,
+    statement: str,
+    true_desc: str | None,
+    false_desc: str | None,
+    as_json: bool,
+    endpoint: str | None,
+):
+    """Typed noul: P(true) for a yes/no statement."""
+    from .primitives import laya_noul
+
+    state = _parse_input(state_val)
+
+    try:
+        result = laya_noul(
+            state, statement,
+            true_desc=true_desc, false_desc=false_desc,
+            endpoint=endpoint,
+        )
+    except (ConnectionError, TimeoutError) as e:
+        raise click.ClickException(str(e))
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
+
+    if as_json:
+        click.echo(json.dumps(dataclasses.asdict(result), indent=2))
+    else:
+        click.echo(f"noul: {result.noul:.4f}")
+        rs = result.routing_signal
+        click.echo(
+            f"routing: act={rs.act_probability:.4f} "
+            f"escalate={rs.escalate_probability:.4f} (experimental)"
+        )
+
+
+@cli.command()
+@click.option("--state", "state_val", required=True, help="JSON string or file path")
+@click.option("--questions", "questions_val", required=True, help="JSON string or file path")
+@click.option("--json", "as_json", is_flag=True, default=False, help="Raw JSON output")
+@click.option("--endpoint", default=None, help="Service endpoint URL")
+def batch(state_val: str, questions_val: str, as_json: bool, endpoint: str | None):
+    """Typed batch: many mixed-type questions in one forward pass."""
+    from .primitives import laya_batch
+
+    state = _parse_input(state_val)
+    questions = _parse_input(questions_val)
+    if not isinstance(questions, dict) or not questions:
+        raise click.ClickException("--questions must be a non-empty JSON object")
+
+    try:
+        result = laya_batch(state, questions, endpoint=endpoint)
+    except (ConnectionError, TimeoutError) as e:
+        raise click.ClickException(str(e))
+    except RuntimeError as e:
+        raise click.ClickException(str(e))
+
+    if as_json:
+        click.echo(json.dumps(dataclasses.asdict(result), indent=2))
+    else:
+        from .primitives import ChoiceResult, NoulResult, ScoreResult
+
+        for qid, answer in result.answers.items():
+            t = type(answer).__name__
+            click.echo(f"\n{qid} ({t}):")
+            if isinstance(answer, ChoiceResult):
+                click.echo(f"  → {answer.choice}")
+                for label, prob in answer.probabilities.items():
+                    click.echo(f"    {label}: {prob:.4f}")
+            elif isinstance(answer, ScoreResult):
+                click.echo(f"  score: {answer.score:.4f}")
+            elif isinstance(answer, NoulResult):
+                click.echo(f"  noul: {answer.noul:.4f}")
+            rs = answer.routing_signal
+            click.echo(
+                f"  routing: act={rs.act_probability:.4f} "
+                f"escalate={rs.escalate_probability:.4f}"
+            )
+        if result.cached:
+            click.echo("\n(cached)")
 
 
 @cli.command()

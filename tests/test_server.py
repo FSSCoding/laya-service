@@ -38,6 +38,15 @@ class TestSystemOne:
         assert "usage" in body
         assert body["cached"] is False
 
+    def test_system_one_routing_signal_present(self, client):
+        resp = client.post("/system_one", json={"state": STATE, "questions": QUESTIONS})
+        body = resp.json()
+        for qid, answer in body["answers"].items():
+            rs = answer["rl_agent"]
+            assert "act_probability" in rs
+            assert "escalate_probability" in rs
+            assert rs["experimental"] is True
+
     def test_system_one_rejects_empty_questions(self, client):
         resp = client.post("/system_one", json={"state": STATE, "questions": {}})
         assert resp.status_code == 422
