@@ -41,7 +41,7 @@ HTTP :11448
        │                 └─ run_in_executor(_process_batch)
        │                       └─ per payload: _process_payload
        │                             ├─ cache.get(key)? → return (≈6 ms)
-       │                             └─ cache miss → worker.system_one (infer_lock, CUDA:0)
+       │                             └─ cache miss → worker.system_one (infer_lock, GPU card 1)
        │                                   └─ buildSequence + tokenize → ONNX run →
        │                                      temperature/softmax → shape answer
        ├─ GET /health          (providers, model_loaded, idle_s, uptime)

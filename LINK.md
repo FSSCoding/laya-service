@@ -33,6 +33,12 @@ Read this first when operating or modifying the service on bobai.
 | Result cache DB | `~/.laya-service/result_cache.db` (SQLite; created at runtime) |
 | systemd unit (source) | `/MASTERFOLDER/Services/laya-service/systemd/laya-service.service` |
 | systemd timer (source) | `/MASTERFOLDER/Services/laya-service/systemd/laya-service-restart.timer` |
+| systemd unit (**installed**) | `/etc/systemd/system/laya-service.service` (system unit, `User=bob`) |
+| systemd timer (**installed**) | `/etc/systemd/system/laya-service-restart.timer` |
+| systemd drop-in override | `/etc/systemd/system/laya-service.service.d/override.conf` (re-pins `CUDA_VISIBLE_DEVICES=1`) |
+| CLI entry point | `/MASTERFOLDER/Services/laya-service/.venv/bin/laya` (`laya_server.cli:cli`) |
+| MCP server | `~/.qwen/mcp-servers/laya.js` (registered in `~/.qwen/settings.json`) |
+| Gitea remote | `https://gitea.bobai.com.au/foxadmin/laya-service.git` |
 | Tests | `/MASTERFOLDER/Services/laya-service/tests/` (pytest) |
 | Benchmark | `/MASTERFOLDER/Services/laya-service/bench.py` |
 | Research/design doc | `/MASTERFOLDER/Services/laya/docs/LAYA-GPU-SERVICE.md` |
@@ -118,10 +124,18 @@ CUDA_VISIBLE_DEVICES=1 LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x
 
 ### systemd (production)
 
-The unit runs the installed `laya-server` console command. Ensure the package is installed in the
-service venv with `.venv/bin/python -m pip install -e .` before enabling it.
+**Installed & active on bobai (2026-09-28).** The unit is a **system** unit at
+`/etc/systemd/system/laya-service.service` (`User=bob`), with the weekly restart timer at
+`/etc/systemd/system/laya-service-restart.timer` and a drop-in override at
+`/etc/systemd/system/laya-service.service.d/override.conf` (re-pins `CUDA_VISIBLE_DEVICES=1`).
+Journal confirms `systemd[1]` owns the process. Verify with `sudo-gui systemctl status
+laya-service.service` and `curl -s http://127.0.0.1:11448/health`.
 
-The unit sources are in `systemd/`. Install (needs sudo — hand to user / run via `sudo-gui`):
+The unit runs the installed `laya-server` console command. The package is editable-installed in
+the service venv (`.venv/bin/python -m pip install -e .`), so the running service tracks the
+source tree.
+
+**Re-install / update from source** (needs sudo — route through `sudo-gui`):
 
 ```bash
 sudo-gui cp /MASTERFOLDER/Services/laya-service/systemd/laya-service.service /etc/systemd/system/laya-service.service
@@ -130,6 +144,12 @@ sudo-gui systemctl daemon-reload
 sudo-gui systemctl enable --now laya-service.service
 sudo-gui systemctl enable --now laya-service-restart.timer
 ```
+
+> **Source ↔ installed drift (2026-09-28):** the installed `.service` differs from the repo source
+> only in two comment lines (installed cites "vLLM" as the card-0 tenant; source says "other GPU
+> tenants"). No behavioral difference. The effective runtime is the unit **plus** the drop-in
+> override. If you re-`cp` the source, the override still applies (drop-ins survive unit
+> replacement).
 
 Resource caps in the unit: `MemoryMax=8G`, `CPUQuota=300%`, `Nice=-5`, `Restart=on-failure`,
 `RestartSec=5`. The weekly timer reclaims fragmented CUDA memory (mirrors embed-server).
@@ -173,8 +193,12 @@ Do NOT assert exact 4-decimal equality between CPU and GPU — that's not achiev
 
 ## Ops notes
 
-- **Model is resident** (loads once at startup, pre-warmed). It does not unload between requests.
-  Idle cost is ~2.3 GB VRAM + ~736 MB RAM + ~0% GPU util.
+- **Model lifecycle:** the model is pre-warmed at startup and held while busy. With the current
+  config (`idle.unload_after_s=300`, `idle.enabled=true`) it **auto-unloads after 300 s idle** and
+  **lazily reloads (~0.7 s) on the next `/system_one`**. Set `unload_after_s=0` /
+  `idle.enabled=false` to keep it permanently resident. `/health` reports `model_loaded` and
+  `status: "degraded"` while unloaded (normal after idle — not a fault). Idle cost while loaded is
+  ~2.3 GB VRAM + ~736 MB RAM + ~0% GPU util.
 - **Cache** is keyed on `sha256(state, questions)` — deterministic, so repeat requests are served
   from memory (~6 ms) instead of the GPU. Cache lives at `~/.laya-service/result_cache.db` + in-memory
   LRU. To clear: stop the service and delete the DB (or set `cache.enabled=false` in config).

@@ -8,43 +8,57 @@ can continue without re-deriving context.
 
 ## Current state (2026-09-28)
 
-The **service** is built, verified, and documented:
-- GPU (CUDA) ONNX inference over HTTP on **:11448**, ~20× faster than CPU, decision-identical to the
-  reference.
+The **service** is built, verified, deployed, and pushed:
+- GPU (CUDA) ONNX inference over HTTP on **:11448**, ~20× faster than CPU, decision-identical to
+  the reference.
 - Request batching, two-tier cache, idle-unload (VRAM released after 5 min idle or on demand),
   with lazy reload on next request. `laya-server` console command + systemd unit for lifecycle.
-- Docs: README, LINK, SERVICE, CHANGELOG, ROADMAP. Parity + bench tests in-tree.
+- **Installed as a system systemd unit on bobai** (`/etc/systemd/system/laya-service.service` +
+  weekly restart timer; drop-in override re-pins `CUDA_VISIBLE_DEVICES=1`). Journal confirms
+  `systemd[1]` owns the process; `/health` shows `CUDAExecutionProvider` first.
+- `laya` CLI in the venv (`.venv/bin/laya`) — sole owner of systemd lifecycle; JS MCP server at
+  `~/.qwen/mcp-servers/laya.js`.
+- **Repo pushed** to Gitea: `https://gitea.bobai.com.au/foxadmin/laya-service.git`.
+- Docs: README, LINK, SERVICE, INSTALL, CHANGELOG, ROADMAP. Parity + bench tests in-tree.
 
-What is **not** done yet: systemd install (needs sudo), the CLI *client*, interface primitives, and
-a remote repo.
+What is **not** done yet: the typed interface primitives (Phase 3) and remote deployment / ops
+hardening (Phase 4).
 
 ---
 
-## Phase 1 — finish the service (immediate)
+## Phase 1 — finish the service (DONE except lockfile + resident/on-demand decision)
 
-- [ ] **Install the systemd unit + timer** (user's sudo; exact commands in LINK.md). Verify under
-      `systemctl` that CUDA loads (the unit carries the CUDA-13 `LD_LIBRARY_PATH`).
+- [x] **Install the systemd unit + timer** — installed on bobai 2026-09-28: system unit
+      `/etc/systemd/system/laya-service.service` + `laya-service-restart.timer`, drop-in override
+      `laya-service.service.d/override.conf` re-pinning `CUDA_VISIBLE_DEVICES=1`. Journal confirms
+      `systemd[1]` owns the process; `/health` shows `CUDAExecutionProvider` first.
 - [ ] Decide **resident vs on-demand as the default**: keep `idle.unload_after_s=300` (current) so
       VRAM is released when idle, or set it permanent for a high-use period. Trivial config flip.
-- [ ] **Repo**: init git (done locally — see below), review with user, then push to Gitea
-      (`https://gitea.bobai.com.au/<owner>/laya-service`). Confirm the remote + owner.
+- [x] **Repo**: pushed to Gitea `https://gitea.bobai.com.au/foxadmin/laya-service.git` (`master`,
+      clean tree, 2026-09-28).
 - [ ] Optionally add a **lockfile** for reproducibility (deps are in `pyproject.toml`).
 
-## Phase 2 — CLI client (the "streamline implementation" goal)
+## Phase 2 — CLI client (DONE — the `laya` CLI ships in the package)
 
-The user wants a **CLI that ties the tool together** — not just for humans, but as the *template*
-other projects implement against (installable on any machine on the network). Intended shape:
+Built as part of the `laya_server` package (`src/laya_server/cli.py`, entry point
+`laya = "laya_server.cli:cli"`), installed into the service venv at `.venv/bin/laya`. Subcommands:
+`serve`, `query`, `health`, `stats`, `unload`, `version`, `start`, `stop`, `restart`, `status`.
 
-- [ ] A `laya` CLI (e.g. a Python package installed into a venv, or a thin wrapper like
-      `fss-chatterbox`) that wraps the HTTP endpoints:
-  - `laya ask --state <json|file> --questions <json|file>` → formatted answers
-  - `laya system-one` (raw JSON in/out, for scripting)
-  - `laya status` / `laya unload` (thin wrappers over `/health`, `/control/unload`)
-  - `laya bench` (runs the benchmark client-side)
-- [ ] Config: `LAYA_ENDPOINT` (default `http://127.0.0.1:11448`) so the CLI works locally or against
-      a remote server (the user may move the service to another box).
-- [ ] **Install path** on other machines: a wrapper script + venv (mirror the `fss-chatterbox`
-      `~/.local/bin` wrapper pattern) or a pip-installable package. Decide install mechanics.
+- [x] **Inference**: `laya query --state <json|file> --questions <json|file> [--json]` →
+      human-formatted answers or raw JSON for scripting.
+- [x] **Health/stats**: `laya health` / `laya stats` (thin wrappers over `/health`, `/v1/stats`).
+- [x] **Lifecycle**: `laya start` / `laya stop` / `laya restart` (system unit, no `--user`;
+      requires root) and `laya status` (combined systemd + health; `--json` for a frozen schema).
+- [x] **Unload**: `laya unload` (thin wrapper over `/control/unload`).
+- [x] **Endpoint config**: `--endpoint` flag → `LAYA_ENDPOINT` env → `http://127.0.0.1:11448`, so
+      the CLI works locally or against a remote server.
+- [x] **Installed** on bobai in the service venv (editable install tracks the source tree).
+
+Remaining / not yet:
+- [ ] **Cross-machine install path** beyond bobai: a `~/.local/bin` wrapper (Chatterbox-style) or a
+      pip-installable distribution. Decide mechanics before the service moves off bobai.
+- [ ] Optionally a **`laya bench`** subcommand (currently benchmarking is via the standalone
+      `bench.py`, not a CLI verb).
 
 ## Phase 3 — interface primitives (so primitives aren't rebuilt every time)
 
@@ -99,12 +113,14 @@ so coordinate a maintenance window first.
 
 ## Open decisions (for the user)
 
-1. **Resident vs on-demand default** — keep the 300 s idle-unload, or run permanent for now?
-2. **CLI form** — Python package + `~/.local/bin` wrapper (Chatterbox-style) vs pip-installable?
+1. **Resident vs on-demand default** — keep the 300 s idle-unload (current), or run permanent for
+   a high-use period? Trivial config flip (`idle.unload_after_s`).
+2. ~~**CLI form**~~ — **resolved**: the `laya` CLI ships as part of the `laya_server` package
+   (editable install into the service venv). Cross-machine install path is still open (see Phase 2).
 3. **Primitives** — pure CLI subcommands, or also an importable Python library? (and a Node client?)
 4. **Remote** — move off bobai now or keep it here until there's another machine? (CLI already
-   supports a remote endpoint.)
-5. **Repo** — Gitea owner/repo name for the push.
+   supports a remote endpoint via `LAYA_ENDPOINT`.)
+5. ~~**Repo**~~ — **resolved**: pushed to `https://gitea.bobai.com.au/foxadmin/laya-service.git`.
 
 ## Design constraints (keep in mind)
 

@@ -1,9 +1,13 @@
 # INSTALL — Laya GPU Inference Service
 
-Copy-paste-runnable install + deploy + verify instructions for bobai. Every path
-and value below is concrete and verified as of **2026-09-28**. There are no
-placeholders. If a step fails, the troubleshooting section maps the real error
-to its cause.
+Copy-paste-runnable install + deploy + verify instructions for a **fresh machine** (or a clean
+re-install). Every path and value below is concrete and verified as of **2026-09-28**. There are
+no placeholders. If a step fails, the troubleshooting section maps the real error to its cause.
+
+> **On bobai the service is already installed and active** (as of 2026-09-28): system unit at
+> `/etc/systemd/system/laya-service.service` + timer, with a drop-in override at
+> `laya-service.service.d/override.conf`. This doc is the reference for a fresh deploy; on bobai
+> you normally only re-run the verify steps (Steps 3–4) after a change.
 
 This doc covers **deploying the systemd service** (production). For the dev
 foreground loop, the test suite, and the CUDA library gotcha in detail, see

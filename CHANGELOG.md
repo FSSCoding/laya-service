@@ -100,7 +100,7 @@ Format follows the embed-server changelog convention.
   `systemd/laya-service-restart.timer` (weekly CUDA-memory reclaim).
 - **Docs** — README, LINK, SERVICE, CHANGELOG, ROADMAP.
 
-### Verified (2026-09-28, RTX 3090, CUDA:0)
+### Verified (2026-09-28, RTX 3090, GPU card 1)
 - Parity: decision-identical to the CPU reference; `input_tokens` exact (267); numerics within 1e-3.
 - CUDA active: `/health` → `providers: ["CUDAExecutionProvider", "CPUExecutionProvider"]`.
 - **~20× speedup**: single warm call 297 ms (CPU) → 15 ms (GPU); 16-concurrent batch ~15 ms/request.
@@ -108,10 +108,16 @@ Format follows the embed-server changelog convention.
   resumes CUDA inference.
 - Daemon lifecycle: start/stop/status/unload all verified (port freed, VRAM released on stop).
 
+### Done (2026-09-28)
+- **systemd unit installed & active** on bobai: `/etc/systemd/system/laya-service.service` +
+  `laya-service-restart.timer`, with drop-in override at `laya-service.service.d/override.conf`
+  re-pinning `CUDA_VISIBLE_DEVICES=1`. Journal confirms `systemd[1]` owns the process.
+- **Repo pushed** to Gitea: `https://gitea.bobai.com.au/foxadmin/laya-service.git`
+  (`master`, clean tree).
+
 ### Not yet done
-- systemd unit **not installed** (awaiting user's sudo; exact commands in LINK.md).
-- CLI client + interface primitives (see ROADMAP).
-- Git repo initialised locally; remote push pending user review.
+- Interface primitives (typed `laya_choice`/`laya_score`/`laya_noul`, batch primitive) — ROADMAP.
+- Remote deployment + ops hardening (alerting, log rotation, cache-DB disk) — ROADMAP.
 
 ## 2026-09-28 — Package layout
 

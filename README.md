@@ -59,19 +59,25 @@ The `laya` CLI is the primary interface for humans and scripts, and the sole own
 lifecycle:
 
 ```bash
-laya query --state '{"subject":"Refund"}' --questions '{"urgency":{"type":"score","instructions":"?"}}'
+laya query --state '{"subject":"Refund"}' \
+          --questions '{"urgency":{"type":"score","instructions":"How urgent?","criteria":["low","med","high"]}}'
 laya health
 laya stats
 laya status --json      # stable schema for automation
-laya start              # systemctl --user start laya-service
+laya start              # systemctl start laya-service   (system unit; root)
 laya stop
-laya unload             # free ~2.4 GB VRAM
+laya restart
+laya unload             # free ~2.4 GB VRAM; lazily reloads on next query
 ```
+
+Subcommands: `serve`, `query`, `health`, `stats`, `unload`, `version`, `start`, `stop`,
+`restart`, `status`. `start`/`stop`/`restart` manage the **system** unit (no `--user`) and
+require root (route through `sudo-gui`); `status` is readable by any user.
 
 Endpoint resolution: `--endpoint` flag → `LAYA_ENDPOINT` env → `http://127.0.0.1:11448`.
 
 Exit codes: `laya health` → 0=ok, 1=degraded, 2=unreachable. `laya status` → 0=healthy,
-1=degraded, 2=unreachable/error, 3=stopped.
+1=degraded (model unloaded), 2=unreachable/unknown, 3=stopped.
 
 ---
 
@@ -134,20 +140,23 @@ Response headers: `X-Request-Id`, `X-Latency-Ms`. Errors use an OpenAI-style env
 
 ---
 
-## Resource footprint (measured 2026-09-28, RTX 3090, CUDA:0)
+## Resource footprint (measured 2026-09-28, RTX 3090, GPU card 1)
 
 | Resource | Value | Notes |
 |----------|-------|-------|
-| **VRAM (idle, resident)** | **~2.3 GB** | Model held on-card at all times (resident, pre-warmed). Does NOT unload between requests. |
+| **VRAM (loaded, idle)** | **~2.3 GB** | Model resident while loaded; auto-unloads after 300 s idle (default), lazily reloads ~0.7 s on next request. |
 | **System RAM (RSS)** | **~736 MB** | Python worker process (tokenizer + ONNX session host). |
 | **GPU util (idle)** | ~0–2% (any higher util on the card is *other* tenants) | Laya itself is idle when not inferring. |
 | **Single warm call** | **~15 ms** | 3-question call, warm. |
 | **Batched (16 concurrent)** | ~15 ms/request (one pass) | Coalesced into a single forward pass. |
 
-**Idle behaviour:** the model is **always resident** — it loads once at startup (pre-warmed in the
-lifespan) and stays on the GPU. It does **not** unload and reload between inferences (that would
-re-introduce the ~0.6 s load penalty per request). The service is cheap when idle: ~2.3 GB VRAM
-held, ~736 MB RAM, ~0% GPU util. See the roadmap for an optional idle-unload mode.
+**Idle behaviour:** the model is pre-warmed at startup and held while busy. With the default
+config (`idle.unload_after_s=300`) it **auto-unloads after 300 s idle** and **lazily reloads
+(~0.7 s) on the next request**, so a left-running service doesn't hoard 2.3 GB VRAM. Set
+`unload_after_s=0` / `idle.enabled=false` to keep it permanently resident (avoids the ~0.7 s
+per-request cold-start after an unload). While loaded and idle the cost is ~2.3 GB VRAM +
+~736 MB RAM + ~0% GPU util. `/health` shows `model_loaded` and `status: "degraded"` while
+unloaded — that's normal after idle, not a fault.
 
 ---
 
@@ -168,6 +177,13 @@ held, ~736 MB RAM, ~0% GPU util. See the roadmap for an optional idle-unload mod
 
 - ✅ Built & verified: parity (decision-identical), CUDA active, ~20× speedup, batching, caching.
 - ✅ Docs written.
-- ⬜ **Not yet** installed as a systemd unit (awaiting user's sudo; exact commands in LINK.md).
-- ⬜ CLI, client library, and interface primitives — see ROADMAP.md.
-- ⬜ Repo: initialised locally; remote/Gitea push pending user review.
+- ✅ **Installed as a system systemd unit** (`/etc/systemd/system/laya-service.service` + timer;
+      active on bobai). Drop-in override at `laya-service.service.d/override.conf` re-pins
+      `CUDA_VISIBLE_DEVICES=1`.
+- ✅ `laya` CLI in venv (`.venv/bin/laya`), sole owner of systemd lifecycle.
+- ✅ MCP server (`~/.qwen/mcp-servers/laya.js`, registered in `~/.qwen/settings.json`).
+- ✅ Repo pushed: `https://gitea.bobai.com.au/foxadmin/laya-service.git` (`master @ b59eced`,
+      clean tree).
+- ⬜ Interface primitives (typed `laya_choice`/`laya_score`/`laya_noul` wrappers, batch
+      primitive) — see ROADMAP.md Phase 3.
+- ⬜ Remote deployment / ops (alerting, log rotation, cache-DB disk) — ROADMAP.md Phase 4.
