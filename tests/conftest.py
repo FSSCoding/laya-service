@@ -1,13 +1,16 @@
 """Shared fixtures for laya-service tests."""
+import os
 import sys
 from pathlib import Path
 
 import pytest
 
-# Make src/ importable
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Make src/ importable when not already installed via pip install -e .
+_project_root = str(Path(__file__).parent.parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
 
-MODEL_DIR = "/MASTERFOLDER/Services/laya/onnx"
+MODEL_DIR = os.environ.get("LAYA_MODEL_DIR", "/MASTERFOLDER/Services/laya/onnx")
 
 STATE = {
     "subject": "Refund not received",
@@ -44,7 +47,7 @@ def worker():
 
     try:
         w = LayaWorker(MODEL_DIR)
-    except Exception as e:
+    except (ImportError, FileNotFoundError, OSError) as e:
         pytest.skip(f"CUDA/model unavailable: {e}")
     yield w
     w.release()

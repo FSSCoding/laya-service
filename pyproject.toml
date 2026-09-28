@@ -10,13 +10,15 @@ requires-python = ">=3.12"
 dependencies = [
     "onnxruntime-gpu>=1.30.0",
     "tokenizers>=0.20.0",
-    "fastapi>=0.115.0",
-    "uvicorn[standard]>=0.34.0",
-    "pydantic>=2.0.0",
     "numpy>=1.26.0",
 ]
 
 [project.optional-dependencies]
+server = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.0.0",
+]
 dev = [
     "pytest>=8.0",
     "ruff>=0.4",
@@ -24,6 +26,7 @@ dev = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["src*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
