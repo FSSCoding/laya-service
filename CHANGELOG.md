@@ -5,6 +5,45 @@ Format follows the embed-server changelog convention.
 
 ---
 
+## [0.2.0] — 2026-09-28 (next pass: client, CLI, MCP, tests)
+
+### Added
+- **`src/laya_server/_state.py`** — `initialize_state(app, cfg)` helper. Single source of
+  truth for app state shape, used by both production lifespan and test fixtures.
+- **`src/laya_server/client.py`** — lightweight HTTP client (httpx). Explicit endpoint
+  resolution (`--endpoint` → `LAYA_ENDPOINT` → default). Retry on `ReadError`/`ReadTimeout`
+  only; no retry on connection refused.
+- **`src/laya_server/cli.py`** — Click CLI with 10 subcommands: serve, query, health, stats,
+  unload, version, start, stop, restart, status. CLI is the sole owner of systemd lifecycle.
+  `status --json` emits a frozen schema (tested). Exit codes: 0=healthy, 1=degraded,
+  2=unreachable, 3=stopped.
+- **`tests/test_server.py`** — 10 HTTP contract tests (mocked worker, no GPU, no lifespan).
+  Verifies routing, validation, status codes, response shape.
+- **`tests/test_integration.py`** — 2 near-end-to-end tests (real lifespan, real batcher,
+  mocked worker). Catches "tests pass but app wiring broken."
+- **`tests/test_cli.py`** — 7 CLI contract tests (version, status --json schema, health exit
+  codes). Verifies the frozen JSON API.
+- **`~/.qwen/mcp-servers/laya.js`** — JS MCP server (stdio). Direct HTTP via fetch. 4 tools:
+  laya_system_one, laya_health, laya_stats, laya_unload. No lifecycle management. No Python
+  dependency. Registered in `~/.qwen/settings.json`.
+- **`httpx>=0.27`, `click>=8.0`** added to core dependencies.
+- **`laya`** console entry point (`laya_server.cli:cli`).
+
+### Changed
+- **`server.py`** — lifespan now calls `initialize_state()` from `_state.py` instead of
+  inline state construction. Removed duplicate `_make_process_payload` (moved to `_state.py`).
+- **`__main__.py`** — now delegates to CLI (`click` group) instead of auto-starting the server.
+  `python -m laya_server` shows help; use `python -m laya_server serve` to start.
+- **`pyproject.toml`** — added httpx, click to deps; added `laya` entry point.
+
+### Architecture notes
+- The HTTP API is the single source of truth. CLI and MCP are independent frontends.
+- MCP does NOT manage service lifecycle. CLI owns start/stop/restart/status.
+- Text CLI output is unstable (human-friendly). JSON output (`--json`) is a frozen API.
+- Batcher coalescing/concurrency is NOT covered by test_server.py (documented gap).
+
+---
+
 ## [Unreleased] — 2026-09-28 (architecture refactor)
 
 ### Added

@@ -53,6 +53,36 @@ The `LD_LIBRARY_PATH` is **required for CUDA** — without it the CUDA EP silent
 
 ---
 
+## CLI
+
+The `laya` CLI is the primary interface for humans and scripts, and the sole owner of systemd
+lifecycle:
+
+```bash
+laya query --state '{"subject":"Refund"}' --questions '{"urgency":{"type":"score","instructions":"?"}}'
+laya health
+laya stats
+laya status --json      # stable schema for automation
+laya start              # systemctl --user start laya-service
+laya stop
+laya unload             # free ~2.4 GB VRAM
+```
+
+Endpoint resolution: `--endpoint` flag → `LAYA_ENDPOINT` env → `http://127.0.0.1:11448`.
+
+Exit codes: `laya health` → 0=ok, 1=degraded, 2=unreachable. `laya status` → 0=healthy,
+1=degraded, 2=unreachable/error, 3=stopped.
+
+---
+
+## MCP server
+
+A JS MCP server (`~/.qwen/mcp-servers/laya.js`) exposes the HTTP API as agent tools (direct HTTP,
+no CLI spawning). Tools: `laya_system_one`, `laya_health`, `laya_stats`, `laya_unload`.
+Does NOT manage service lifecycle — use the `laya` CLI for start/stop/restart.
+
+---
+
 ## HTTP API
 
 Base URL: `http://<host>:11448`

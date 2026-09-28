@@ -1,5 +1,6 @@
-"""python -m laya_server"""
+"""python -m laya_server — shows CLI help (not auto-start server)."""
 
-from .server import run_server
+from .cli import cli
 
-run_server()
+if __name__ == "__main__":
+    cli()

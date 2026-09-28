@@ -14,7 +14,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections import deque
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,8 +26,7 @@ from pydantic import BaseModel, Field
 
 from . import __version__
 from ._config import AppConfig, load_config
-from .batcher import RequestBatcher
-from .result_cache import ResultCache
+from ._state import initialize_state
 from .worker import LayaWorker
 
 logger = logging.getLogger("laya-service")
@@ -44,51 +42,30 @@ class SystemOneRequest(BaseModel):
 def _make_lifespan(cfg: AppConfig):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        st = app.state
-        st.start_time = time.time()
-        st.worker = None
-        st.cache = None
-        st.batcher = None
-        st.stats = {
-            "total_requests": 0,
-            "last_activity": datetime.now(timezone.utc).isoformat(),
-            "last_latency_ms": None,
-            "cache_hits": 0,
-            "cache_misses": 0,
-            "batch_coalesced": 0,
-            "latency_window": deque(maxlen=100),
-        }
-
         # Pre-warm the GPU model at startup (avoids first-request latency spike).
         try:
             t0 = time.time()
-            st.worker = LayaWorker(
+            app.state.worker = LayaWorker(
                 cfg.model_dir,
                 execution_providers=[(p.name, p.options) for p in cfg.gpu.providers],
             )
             logger.info(
-                f"Worker ready in {time.time() - t0:.1f}s, providers={st.worker.active_providers}"
+                f"Worker ready in {time.time() - t0:.1f}s, "
+                f"providers={app.state.worker.active_providers}"
             )
         except Exception:
             logger.exception(
                 "Failed to initialise model at startup; /system_one will fail until fixed"
             )
+            app.state.worker = None
 
-        cache_cfg = cfg.cache
-        if cache_cfg.enabled:
-            st.cache = ResultCache(
-                cache_cfg.db_path,
-                max_memory_entries=cache_cfg.max_memory_entries,
-                ttl_days=cache_cfg.ttl_days,
-            )
+        # Initialize remaining state (cache, batcher, stats) via shared helper.
+        # app.state.worker is already set above (real or None on failure), so
+        # create_worker=False — a failed startup load must not be silently retried.
+        initialize_state(app, cfg, create_worker=False)
 
         loop = asyncio.get_running_loop()
-        st.batcher = RequestBatcher(
-            max_batch_size=cfg.batcher.max_batch_size,
-            max_wait_ms=cfg.batcher.max_wait_ms,
-            worker=_make_process_payload(app),
-        )
-        st.batcher.start(loop)
+        app.state.batcher.start(loop)
 
         reaper_task = None
         if cfg.idle.enabled:
@@ -98,27 +75,15 @@ def _make_lifespan(cfg: AppConfig):
 
         if reaper_task:
             reaper_task.cancel()
-        if st.batcher and st.batcher._task:
-            st.batcher._task.cancel()
-        if st.cache:
-            st.cache.close()
-        if st.worker:
-            st.worker.release()
+        if app.state.batcher and app.state.batcher._task:
+            app.state.batcher._task.cancel()
+        if app.state.cache:
+            app.state.cache.close()
+        if app.state.worker:
+            app.state.worker.release()
             logger.info("Model unloaded from GPU (shutdown)")
 
     return lifespan
-
-
-def _make_process_payload(app: FastAPI):
-    """Return a function that processes a single payload via the app's worker."""
-
-    def _process(payload: Dict[str, Any]) -> Dict[str, Any]:
-        w = app.state.worker
-        if w is None:
-            raise RuntimeError("Model not loaded")
-        return w.system_one(payload["state"], payload["questions"])
-
-    return _process
 
 
 async def _idle_reaper(app: FastAPI, cfg: AppConfig):
@@ -183,11 +148,9 @@ def create_app(cfg: AppConfig) -> FastAPI:
                 cfg.model_dir,
                 execution_providers=[(p.name, p.options) for p in cfg.gpu.providers],
             )
-            logger.info(
-                f"Worker reloaded, providers={st.worker.active_providers}"
-            )
+            logger.info(f"Worker reloaded, providers={st.worker.active_providers}")
 
-        key = ResultCache.key(req.state, req.questions)
+        key = _cache_key(req.state, req.questions)
         cached = st.cache and st.cache.get(key) if st.cache else None
         if cached is not None:
             st.stats["cache_hits"] += 1
@@ -280,11 +243,19 @@ def create_app(cfg: AppConfig) -> FastAPI:
     return app
 
 
-def run_server(config_path: str | None = None) -> None:
+def _cache_key(state: Any, questions: Dict[str, Any]) -> str:
+    """Compute the cache key without importing ResultCache at module level."""
+    from .result_cache import ResultCache
+
+    return ResultCache.key(state, questions)
+
+
+def run_server(config_path: str | None = None, log_level: str = "info") -> None:
     """Console entry point: load config, configure logging, start uvicorn.
 
     Accepts an optional positional config path (for the console script) or
-    --config /path/to/config.json (for python -m laya_server).
+    --config /path/to/config.json (for python -m laya_server). log_level is the
+    uvicorn log level; it can also be set via --log-level on the command line.
     """
     import argparse
 
@@ -294,7 +265,7 @@ def run_server(config_path: str | None = None) -> None:
         help="Path to config JSON (default: LAYA_CONFIG_PATH env or config/laya_config.json)",
     )
     parser.add_argument(
-        "--log-level", dest="log_level", default="info",
+        "--log-level", dest="log_level", default=log_level,
         choices=["debug", "info", "warning", "error"],
         help="Uvicorn log level (default: info)",
     )
