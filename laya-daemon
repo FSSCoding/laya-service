@@ -1,0 +1,150 @@
+#!/usr/bin/env bash
+# laya-daemon — start/stop/status for the Laya GPU inference service.
+#
+# Mirrors the FSS Chatterbox model-daemon pattern (start/stop/status + idle behaviour).
+# Unlike Chatterbox's file-queue daemon, Laya is an HTTP server: this CLI manages its
+# process lifecycle (PID file), and the server auto-unloads the model from VRAM after an
+# idle timeout (configurable, default 300s) — freeing the ~2.3 GB without a restart.
+#
+# Usage:
+#   laya-daemon start        Start the service (no-op if already running)
+#   laya-daemon stop         Stop the service (SIGTERM, then SIGKILL if needed)
+#   laya-daemon status       Show process + /health summary
+#   laya-daemon unload       Explicitly free VRAM now (model re-loads lazily on next request)
+#   laya-daemon restart      stop + start
+#
+# Env overrides:
+#   LAYA_GPU           CUDA_VISIBLE_DEVICES (default 0)
+#   LAYA_PORT          port (default 11448)
+#   LAYA_IDLE_UNLOAD_S idle seconds before auto-unload (default 300)
+#   LAYA_MODEL_DIR     model bundle dir (default /MASTERFOLDER/Services/laya/onnx)
+set -euo pipefail
+
+ROOT="/MASTERFOLDER/Services/laya-service"
+PY="$ROOT/.venv/bin/python"
+ENTRY="$ROOT/laya_server.py"
+CFG="$ROOT/config/laya_config.json"
+
+RUNDIR="${XDG_RUNTIME_DIR:-/tmp}/laya-service"
+PIDFILE="$RUNDIR/laya.pid"
+LOGFILE="$RUNDIR/laya.log"
+PORT="${LAYA_PORT:-11448}"
+GPU="${LAYA_GPU:-0}"
+
+mkdir -p "$RUNDIR"
+
+# --- helpers ---------------------------------------------------------------
+is_running() {
+  [ -f "$PIDFILE" ] || return 1
+  local pid; pid=$(cat "$PIDFILE" 2>/dev/null) || return 1
+  [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+get_pid() { [ -f "$PIDFILE" ] && cat "$PIDFILE" 2>/dev/null; }
+
+http_health() {
+  curl -s -m 5 "http://127.0.0.1:${PORT}/health" 2>/dev/null || echo ""
+}
+
+wait_http() {
+  # Wait up to ~30s for /health to answer (model load + pre-warm).
+  local i
+  for i in $(seq 1 60); do
+    if http_health | grep -q '"status":"ok"'; then
+      return 0
+    fi
+    sleep 0.5
+  done
+  return 1
+}
+
+# --- commands --------------------------------------------------------------
+cmd_start() {
+  if is_running; then
+    echo "Already running (PID $(get_pid))."
+    return 0
+  fi
+  echo "Starting laya-service on :${PORT} (GPU ${GPU}, idle-unload ${LAYA_IDLE_UNLOAD_S:-300}s) ..."
+  # Use the dedicated venv python; set the CUDA-13 lib path so the CUDA EP actually loads.
+  CUDA_VISIBLE_DEVICES="$GPU" \
+  LD_LIBRARY_PATH="/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu" \
+  OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 TOKENIZERS_PARALLELISM=false \
+  nohup "$PY" "$ENTRY" >>"$LOGFILE" 2>&1 &
+  local pid=$!
+  echo "$pid" >"$PIDFILE"
+  # Give it a moment, then confirm the port answers.
+  if wait_http; then
+    echo "✓ laya-service started (PID $pid). Log: $LOGFILE"
+    http_health
+  else
+    echo "✗ Started PID $pid but /health did not answer within 30s. Check log: $LOGFILE"
+    return 1
+  fi
+}
+
+cmd_stop() {
+  local pid; pid=$(get_pid)
+  if ! is_running; then
+    echo "Not running."
+    rm -f "$PIDFILE"
+    return 0
+  fi
+  echo "Stopping laya-service (PID $pid) ..."
+  kill -TERM "$pid" 2>/dev/null || true
+  # Grace window ~10s, then force.
+  local i
+  for i in $(seq 1 20); do
+    kill -0 "$pid" 2>/dev/null || break
+    sleep 0.5
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    echo "Force-killing (SIGKILL) ..."
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  rm -f "$PIDFILE"
+  echo "✓ Stopped. VRAM released."
+}
+
+cmd_status() {
+  if is_running; then
+    local pid; pid=$(get_pid)
+    echo "RUNNING (PID $pid) on :${PORT}"
+    local h; h=$(http_health)
+    if [ -n "$h" ]; then
+      echo "$h" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(f"  model_loaded={d.get(\"model_loaded\")} providers={d.get(\"providers\")} idle={d.get(\"idle_s\")}s uptime={d.get(\"uptime_s\")}s")' 2>/dev/null || echo "  health: $h"
+    else
+      echo "  (process up, /health not answering yet)"
+    fi
+  else
+    echo "NOT RUNNING"
+  fi
+}
+
+cmd_unload() {
+  # Free VRAM now without stopping the process. The model re-loads lazily on next request.
+  local h; h=$(curl -s -m 5 -X POST "http://127.0.0.1:${PORT}/control/unload" 2>/dev/null)
+  if [ -n "$h" ]; then
+    echo "✓ $h"
+  else
+    echo "Service not responding on :${PORT} (is it running? try 'laya-daemon status')."
+    return 1
+  fi
+}
+
+cmd_restart() {
+  cmd_stop
+  sleep 1
+  cmd_start
+}
+
+case "${1:-}" in
+  start)    cmd_start ;;
+  stop)     cmd_stop ;;
+  status)   cmd_status ;;
+  unload)   cmd_unload ;;
+  restart)  cmd_restart ;;
+  *)
+    echo "Usage: laya-daemon {start|stop|status|unload|restart}"
+    exit 1
+    ;;
+esac

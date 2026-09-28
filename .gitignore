@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Virtual environment (deps installed here; not committed)
+.venv/
+
+# Runtime / local state
+*.db
+*.sqlite3
+*.log
+run/
+logs/
+
+# Model bundle is owned by ../laya — never duplicate weights here
+onnx/
+*.onnx
+*.onnx.data
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/

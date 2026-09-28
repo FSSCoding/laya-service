@@ -1,0 +1,29 @@
+[Unit]
+Description=Laya GPU Inference Service (onnxruntime-gpu)
+After=network.target
+
+[Service]
+Type=simple
+User=bob
+WorkingDirectory=/MASTERFOLDER/Services/laya-service
+# Pin to one 3090 so Laya does not contend with vLLM's tensor-parallel across both cards.
+# Change CUDA_VISIBLE_DEVICES=1 to use the other card.
+Environment="CUDA_VISIBLE_DEVICES=0"
+# onnxruntime-gpu 1.30 is built against CUDA 13.0; its cuBLAS/cuBLAS-Lt 13 libs live in Ollama's
+# CUDA-13 stack, not on the default LD_LIBRARY_PATH. Without this the CUDA EP silently falls
+# back to CPU (libcublasLt.so.13: cannot open shared object file).
+Environment="LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13:/usr/lib/x86_64-linux-gnu"
+Environment="OMP_NUM_THREADS=2"
+Environment="MKL_NUM_THREADS=2"
+Environment="TOKENIZERS_PARALLELISM=false"
+# Reduce CUDA memory fragmentation on the pinned card.
+Environment="PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512"
+ExecStart=/MASTERFOLDER/Services/laya-service/.venv/bin/python /MASTERFOLDER/Services/laya-service/laya_server.py
+Restart=on-failure
+RestartSec=5
+Nice=-5
+MemoryMax=8G
+CPUQuota=300%
+
+[Install]
+WantedBy=multi-user.target

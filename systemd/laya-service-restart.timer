@@ -1,0 +1,9 @@
+[Unit]
+Description=Weekly restart of Laya GPU Service to reclaim CUDA fragmented memory
+
+[Timer]
+OnCalendar=weekly
+Persistent=true
+
+[Install]
+WantedBy=timers.target
