@@ -20,7 +20,9 @@ logger = logging.getLogger("laya-service.batcher")
 
 
 class RequestBatcher:
-    def __init__(self, max_batch_size: int = 512, max_wait_ms: float = 5.0, worker: Optional[Callable] = None):
+    def __init__(
+        self, max_batch_size: int = 512, max_wait_ms: float = 5.0, worker: Optional[Callable] = None
+    ):
         self.max_batch_size = max_batch_size
         self.max_wait_ms = max_wait_ms
         self._worker_fn = worker
@@ -30,7 +32,9 @@ class RequestBatcher:
     def start(self, loop: asyncio.AbstractEventLoop) -> None:
         self._queue = asyncio.Queue()
         self._task = loop.create_task(self._drain())
-        logger.info(f"RequestBatcher started: max_batch={self.max_batch_size} wait={self.max_wait_ms}ms")
+        logger.info(
+            f"RequestBatcher started: max_batch={self.max_batch_size} wait={self.max_wait_ms}ms"
+        )
 
     async def submit(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         loop = asyncio.get_running_loop()
@@ -60,11 +64,14 @@ class RequestBatcher:
                 except asyncio.TimeoutError:
                     break
 
-            # Run the blocking worker call in the default thread executor so the event loop stays free.
+            # Run the blocking worker call in the default thread executor so the event loop stays
+            # free.
             if len(batch) > 1:
                 logger.debug(f"Coalesced {len(batch)} requests into one GPU call")
             try:
-                results = await loop.run_in_executor(None, self._process_batch, [p for p, _ in batch])
+                results = await loop.run_in_executor(
+                    None, self._process_batch, [p for p, _ in batch]
+                )
                 for (payload, future), res in zip(batch, results):
                     if not future.done():
                         future.set_result(res)
@@ -74,7 +81,7 @@ class RequestBatcher:
                         future.set_exception(exc)
 
     def _process_batch(self, payloads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Blocking: run the shared worker over each payload (each payload = one systemOne request)."""
+        """Blocking: run the shared worker over each payload."""
         out: List[Dict[str, Any]] = []
         for p in payloads:
             out.append(self._worker_fn(p))

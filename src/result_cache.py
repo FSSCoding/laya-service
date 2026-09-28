@@ -29,14 +29,17 @@ class ResultCache:
         self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         with self._lock:
             self._conn.execute(
-                "CREATE TABLE IF NOT EXISTS laya_result_cache (key TEXT PRIMARY KEY, ts REAL, value TEXT)"
+                "CREATE TABLE IF NOT EXISTS laya_result_cache "
+                "(key TEXT PRIMARY KEY, ts REAL, value TEXT)"
             )
             self._conn.commit()
 
     @staticmethod
     def key(state: Any, questions: Dict[str, Any]) -> str:
         # Canonical, order-stable serialisation of the request.
-        payload = json.dumps({"state": state, "questions": questions}, sort_keys=True, separators=(",", ":"))
+        payload = json.dumps(
+            {"state": state, "questions": questions}, sort_keys=True, separators=(",", ":")
+        )
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def get(self, k: str) -> Optional[Dict[str, Any]]:
@@ -45,7 +48,9 @@ class ResultCache:
             if hit is not None:
                 self._mem.move_to_end(k)
                 return hit[1]
-            row = self._conn.execute("SELECT ts, value FROM laya_result_cache WHERE key=?", (k,)).fetchone()
+            row = self._conn.execute(
+                "SELECT ts, value FROM laya_result_cache WHERE key=?", (k,)
+            ).fetchone()
             if row is None:
                 return None
             ts, value = row
@@ -68,7 +73,9 @@ class ResultCache:
             while len(self._mem) > self.max_mem:
                 self._mem.popitem(last=False)
             self._conn.execute(
-                "INSERT OR REPLACE INTO laya_result_cache (key, ts, value) VALUES (?,?,?)", (k, ts, payload)
+                "INSERT OR REPLACE INTO laya_result_cache "
+                "(key, ts, value) VALUES (?,?,?)",
+                (k, ts, payload),
             )
             self._conn.commit()
 

@@ -11,25 +11,28 @@ from __future__ import annotations
 import json
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 
 from .sequence import (
     QTYPES,
     SpecialIds,
+    _round4,
     build_sequence,
     confidence_from_probs,
     render_options,
     softmax,
     temp_bucket,
     to_internal,
-    _round4,
 )
 
 
 class LayaWorker:
-    """Holds one resident onnxruntime-gpu InferenceSession + tokenizer. Thread-safe for one call at a time."""
+    """Holds one resident onnxruntime-gpu InferenceSession + tokenizer.
+
+    Thread-safe for one call at a time.
+    """
 
     def __init__(self, model_dir: str, execution_providers=None):
         import onnxruntime as ort
@@ -54,13 +57,21 @@ class LayaWorker:
             return v
 
         self.ids = SpecialIds(
-            cls=tid("[CLS]"), sep=tid("[SEP]"), mask=tid("[MASK]"), pad=tid("[PAD]"), mask_tok="[MASK]"
+            cls=tid("[CLS]"),
+            sep=tid("[SEP]"),
+            mask=tid("[MASK]"),
+            pad=tid("[PAD]"),
+            mask_tok="[MASK]",
         )
 
-        providers = execution_providers or [("CUDAExecutionProvider", {}), ("CPUExecutionProvider", {})]
+        providers = execution_providers or [
+            ("CUDAExecutionProvider", {}), ("CPUExecutionProvider", {}),
+        ]
         so = ort.SessionOptions()
         so.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        self._session = ort.InferenceSession(str(self.model_dir / "laya.onnx"), sess_options=so, providers=providers)
+        self._session = ort.InferenceSession(
+            str(self.model_dir / "laya.onnx"), sess_options=so, providers=providers,
+        )
         self._lock = threading.Lock()
 
     @property
@@ -76,7 +87,7 @@ class LayaWorker:
         return ids
 
     def system_one(self, state: Any, questions: Dict[str, Any]) -> Dict[str, Any]:
-        """Answer every question about `state` in one forward pass (Jev's system_one request/response)."""
+        """Answer every question about `state` in one forward pass."""
         qids = list(questions.keys())
         if not qids:
             raise ValueError("systemOne: at least one question is required")
@@ -84,12 +95,18 @@ class LayaWorker:
         items = []
         for qid in qids:
             q = to_internal(questions[qid])
-            out = build_sequence(self._encode, self.ids, state, q, self.config["max_len"], self.config["head_max_len"])
+            out = build_sequence(
+                self._encode, self.ids, state, q,
+                self.config["max_len"], self.config["head_max_len"],
+            )
             if len(out["markers"]) != len(render_options(q)):
                 raise ValueError(
-                    f"question {json.dumps(qid)}: options do not fit in head_max_len={self.config['head_max_len']} tokens"
+                    f"question {json.dumps(qid)}: options do not fit in "
+                    f"head_max_len={self.config['head_max_len']} tokens"
                 )
-            items.append({"q": q, "ids": out["ids"], "markers": out["markers"], "qtype": QTYPES[q["t"]]})
+            items.append(
+                {"q": q, "ids": out["ids"], "markers": out["markers"], "qtype": QTYPES[q["t"]]}
+            )
 
         n = len(items)
         L = max(len(it["ids"]) for it in items)

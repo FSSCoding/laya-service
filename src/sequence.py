@@ -74,7 +74,7 @@ def size_bucket(k: int) -> str:
 
 
 def temp_bucket(qtype: int, k: int) -> str:
-    """Key for the per-cardinality temperature: a 2-option noul and a 20-option choice need different scaling."""
+    """Key for the per-cardinality temperature: a 2-option noul and a 20-option choice need different scaling."""  # noqa: E501
     return f"{QTYPE_NAMES[qtype]}:{size_bucket(k)}"
 
 
@@ -148,12 +148,14 @@ def build_sequence(
     head_ids = encode(f"{q['t']} question: {scrub(q['ins'])}")
     # opt0 = [MASK] + encode(" " + opt)[:48]  (leading space consumed by the " " prefix in TS)
     opt_ids = [[ids.mask] + encode(" " + scrub(o))[:48] for o in opts]
-    total = lambda xs: sum(len(o) for o in xs)
-    opt_budget = head_max_len - total(opt_ids)
+    def _total(xs):
+        return sum(len(o) for o in xs)
+
+    opt_budget = head_max_len - _total(opt_ids)
     if opt_budget < 16:
         per = max(4, (head_max_len - 16) // max(1, len(opt_ids)))
         opt_ids = [o[:per] for o in opt_ids]
-        opt_budget = head_max_len - total(opt_ids)
+        opt_budget = head_max_len - _total(opt_ids)
     head_ids = head_ids[: max(8, opt_budget)]
     seq = [ids.cls] + head_ids + [ids.sep]
     markers: List[int] = []
