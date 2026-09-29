@@ -1,8 +1,10 @@
 # Laya Benchmark & Hardening Harness
 
-**Current mission: Service Hardening & Operating Envelope** — characterise and harden the three native primitives (`choice`, `score`, `noul`), plus batching, coalescing, token limits, concurrency, and error handling. Establish the mechanical operating envelope before operational use.
+**Phase 3.5 (Service Hardening & Operating Envelope) complete 2026-09-29.** Safe operating envelope established. 8 bugs/issues identified. See [HARDENING-REPORT.md](HARDENING-REPORT.md) for findings.
 
-See [SPEC-HARDENING.md](SPEC-HARDENING.md) for the current spec.
+**Next: Use it.** Run actual inferencing. Form intuition through interaction.
+
+Spec: [SPEC-HARDENING.md](SPEC-HARDENING.md). Report: [HARDENING-REPORT.md](HARDENING-REPORT.md).
 
 **Deferred research:** The large-scale semantic evaluation methodology (300-case corpus, inversion pairs, consistency perturbation suite, OOD taxonomy, domain-specific adoption slices, 27B reference comparison) is preserved in [FUTURE-METHODS.md](FUTURE-METHODS.md). It is **not** the current mission and should not be built against without explicit direction.
 
@@ -45,9 +47,16 @@ benchmarks/
     systems.py               # systems benchmark (latency, concurrency, cache, VRAM)
     reference.py             # 27B reference runner (deferred — skeleton only)
     report.py                # markdown + JSON report generator
-  hardening/                 # (to build) primitive contract tests, coalescing, token limits
+  hardening/                 # Phase 3.5 test scripts (done 2026-09-29)
+    _common.py               # shared HTTP/timing/stats utilities
+    primitive_contracts.py   # §2: choice/score/noul contract tests
+    batching.py              # §3: coalescing window, saturation, heterogeneous
+    token_limits.py          # §4: state-length sweep, combined budget, limits
+    systems_ops.py           # §5: latency, cold/warm, cache, VRAM, concurrency
+    validation_audit.py      # §7: validation probes + envelope assembly
   results/                   # run outputs (gitignored)
-  SPEC-HARDENING.md          # current mission spec
+  SPEC-HARDENING.md          # mission spec
+  HARDENING-REPORT.md        # findings: safe operating envelope, bugs, recommendations
   FUTURE-METHODS.md          # deferred semantic evaluation methodology
   README.md                  # this file
 ```
@@ -162,9 +171,9 @@ The reference runner (`harness/reference.py`) is a skeleton — adapt `_call_ref
 | Phase | Content | Status |
 |---|---|---|
 | **A** | Harness skeleton + smoke corpus (33 cases) + end-to-end run + correctness pass | ✅ Done |
-| **B** | Service hardening: primitive contracts, coalescing, token limits, concurrency, error handling | ⬜ Current |
-| **C** | Safe operating envelope report + ROADMAP update | ⬜ After B |
-| **D** | Use it. Run actual inferencing. Form intuition through interaction. | ⬜ After C |
+| **B** | Service hardening: primitive contracts, coalescing, token limits, concurrency, error handling | ✅ Done (2026-09-29) |
+| **C** | Safe operating envelope report + ROADMAP update | ✅ Done (2026-09-29) |
+| **D** | Use it. Run actual inferencing. Form intuition through interaction. | ⬜ **Next** |
 | **E** | Domain-specific adoption slices (when real use cases emerge) | ⬜ Future |
 | **F** | Deferred semantic methods (see FUTURE-METHODS.md) | ⬜ Deferred |
 

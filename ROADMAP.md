@@ -24,10 +24,13 @@ The **service** is built, verified, deployed, and pushed:
 - **Benchmark harness** (Phase A complete): smoke corpus (33 cases), quality metrics with
   validity guards, systems benchmark, provenance capture, end-to-end pipeline proven.
   Correctness pass done (noul false-label bug fixed, metric applicability guards added,
-  routing-head validity gating, smoke report labelling).
+  routing-head validity gating, confidence-AUC independence fix).
+- **Service hardening** (Phase 3.5 complete 2026-09-29): safe operating envelope established.
+  8 bugs/issues identified (coalescing non-functional, score non-monotonic, silent truncation,
+  500-vs-400 validation errors, noul negation blindness). Report: `benchmarks/HARDENING-REPORT.md`.
 
-What is **not** done yet: service hardening & operating envelope (Phase 3.5) and remote
-deployment / ops hardening (Phase 4).
+What is **not** done yet: remote deployment / ops hardening (Phase 4), and the batcher
+fix (serial `_process_batch` should merge into one forward pass).
 
 ---
 
@@ -94,28 +97,37 @@ Remaining / not yet:
 - [ ] **Node.js client** — the lib at `../laya` is Node; a thin HTTP client there would let
       both ecosystems share the same GPU service.
 
-## Phase 3.5 — Service Hardening & Operating Envelope (CURRENT)
+## Phase 3.5 — Service Hardening & Operating Envelope (DONE 2026-09-29)
 
 Characterise and harden the three native primitives (`choice`, `score`, `noul`), plus batching,
 coalescing, token limits, concurrency, and error handling. Establish the mechanical operating
 envelope before operational use. Spec: `benchmarks/SPEC-HARDENING.md`.
 
-- [ ] **Primitive contract testing** — option-count scaling (2→64+), score-level bounds (1→11),
-      noul mechanical semantics, controlled monotonic ladders.
-- [ ] **Batching & coalescing** — 5 ms window behaviour, batch saturation (1→512→513+),
-      heterogeneous batches, queueing between adjacent batches.
-- [ ] **Token & truncation limits** — state-length sweep (50→600 tokens), combined budget
-      (state × question complexity), truncation behaviour, error handling at limits.
-- [ ] **Systems & operational** — latency distributions, cold/warm paths, cache behaviour,
-      VRAM/RAM, concurrency sweep, error recovery.
-- [ ] **Validation & error-handling audit** — does the service reject invalid requests cleanly
-      with actionable errors? Document the safe operating envelope table.
-- [ ] **Small semantic probe set** — retain 30–60 cases for regression (smoke corpus exists).
-- [ ] **Hardening report** — safe operating envelope, scaling curves, failure modes.
+- [x] **Primitive contract testing** — option-count scaling (2→256, hard limit 128),
+      score-level bounds (1→crash, 2–11 work), noul mechanical semantics, controlled
+      monotonic ladders (score non-monotonic at all level counts).
+- [x] **Batching & coalescing** — 5 ms window (not functioning — serial processing),
+      batch saturation (1→512→513, no errors, 0.3–0.5 rps), heterogeneous batches OK.
+- [x] **Token & truncation limits** — state-length sweep (silent truncation at 512 tokens),
+      combined budget (500-token state + 32-choice = 512), error handling at limits.
+- [x] **Systems & operational** — latency flat at 8ms (1–50q), cold start 534ms,
+      cache hit 8.3ms / miss 25.9ms, VRAM 8.8GB, concurrency 0.3 rps, error recovery clean.
+- [x] **Validation & error-handling audit** — 500s where 400s expected, silent truncation,
+      score 1-level crash. Safe operating envelope table produced.
+- [x] **Small semantic probe set** — smoke corpus (33 cases) retained as regression baseline.
+- [x] **Hardening report** — `benchmarks/HARDENING-REPORT.md` with envelope, scaling curves,
+      8 bugs/issues found, recommendations.
 
-**Exit criteria:** The native primitives have known input limits, scaling behaviour, performance
-curves, failure modes, validation behaviour and concurrency characteristics; a small semantic
-smoke baseline exists; future evaluation methodologies are documented and deferred.
+**Key findings:** Coalescing not functioning (serial batch processing); score non-monotonic
+(unsuitable for ordinal ranking); silent truncation at 512 tokens; 500 instead of 400 for
+validation errors; noul negation blindness.
+
+**Exit criteria met:** The native primitives have known input limits, scaling behaviour,
+performance curves, failure modes, validation behaviour and concurrency characteristics;
+a small semantic smoke baseline exists; future evaluation methodologies are documented and
+deferred.
+
+**Next: Use it.** Run actual inferencing. Form intuition through interaction.
 
 **Deferred research** (preserved in `benchmarks/FUTURE-METHODS.md`, not current build):
 large-scale semantic corpus (~300 cases), inversion pairs, consistency perturbation suite,

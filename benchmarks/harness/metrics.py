@@ -530,29 +530,45 @@ def compute_routing_metrics(records: list[dict], cases: dict[str, Case]) -> dict
     conf_max = max(confidence_scores) if confidence_scores else 0.0
     conf_range = conf_max - conf_min
     
-    # Validity checks
-    validity_issues = []
+    # Validity checks — common to both AUCs
+    common_issues = []
     if n_correct < 3:
-        validity_issues.append(f"insufficient correct cases ({n_correct} < 3)")
+        common_issues.append(f"insufficient correct cases ({n_correct} < 3)")
     if n_incorrect < 3:
-        validity_issues.append(f"insufficient incorrect cases ({n_incorrect} < 3)")
+        common_issues.append(f"insufficient incorrect cases ({n_incorrect} < 3)")
+
+    # Escalate-specific validity
+    esc_issues = list(common_issues)
     if esc_unique < 2:
-        validity_issues.append(f"escalate has no variance ({esc_unique} unique values)")
+        esc_issues.append(f"escalate has no variance ({esc_unique} unique values)")
     if esc_range < 1e-6:
-        validity_issues.append(f"escalate range too small ({esc_range:.2e} < 1e-6)")
-    
-    # Compute AUC only if valid
-    if validity_issues:
-        esc_auc = {"value": None, "reason": "; ".join(validity_issues)}
-        conf_auc = {"value": None, "reason": "; ".join(validity_issues)}
+        esc_issues.append(f"escalate range too small ({esc_range:.2e} < 1e-6)")
+
+    # Confidence-specific validity
+    conf_issues = list(common_issues)
+    if conf_unique < 2:
+        conf_issues.append(f"confidence has no variance ({conf_unique} unique values)")
+    if conf_range < 1e-6:
+        conf_issues.append(f"confidence range too small ({conf_range:.2e} < 1e-6)")
+
+    # Compute each AUC independently — one invalid predictor must not suppress the other
+    if esc_issues:
+        esc_auc = {"value": None, "reason": "; ".join(esc_issues)}
+    else:
+        # Higher P(escalate) should predict incorrectness
+        esc_auc = auc_roc(incorrect_labels, escalate_scores)
+
+    if conf_issues:
+        conf_auc = {"value": None, "reason": "; ".join(conf_issues)}
+    else:
+        # LOWER confidence should predict incorrectness → invert
+        conf_auc = auc_roc(incorrect_labels, [1 - c for c in confidence_scores])
+
+    # Verdict requires both AUCs to be valid
+    all_issues = esc_issues + [i for i in conf_issues if i not in esc_issues]
+    if all_issues:
         verdict = "insufficient_evidence"
     else:
-        # AUC: higher score = more likely incorrect
-        # For escalate: higher P(escalate) should predict incorrectness
-        esc_auc = auc_roc(incorrect_labels, escalate_scores)
-        # For confidence: LOWER confidence should predict incorrectness → invert
-        conf_auc = auc_roc(incorrect_labels, [1 - c for c in confidence_scores])
-        # Verdict only if we have enough evidence
         if n_total < 20:
             verdict = "insufficient_evidence"
         else:
