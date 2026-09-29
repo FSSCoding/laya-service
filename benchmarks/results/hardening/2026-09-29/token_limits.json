@@ -1,0 +1,666 @@
+{
+  "state_length_sweep": {
+    "test": "state_length_sweep",
+    "results": [
+      {
+        "target_tokens_approx": 50,
+        "input_tokens_rendered": 87,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.27,
+          "median": 9.0,
+          "p95": 14.1,
+          "p99": 14.1,
+          "mean": 9.5
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 100,
+        "input_tokens_rendered": 110,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.19,
+          "median": 8.28,
+          "p95": 8.69,
+          "p99": 8.69,
+          "mean": 8.32
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 200,
+        "input_tokens_rendered": 180,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.16,
+          "median": 8.24,
+          "p95": 8.64,
+          "p99": 8.64,
+          "mean": 8.3
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 300,
+        "input_tokens_rendered": 261,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.13,
+          "median": 8.29,
+          "p95": 9.34,
+          "p99": 9.34,
+          "mean": 8.49
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 400,
+        "input_tokens_rendered": 329,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.11,
+          "median": 8.24,
+          "p95": 18.27,
+          "p99": 18.27,
+          "mean": 9.33
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 450,
+        "input_tokens_rendered": 353,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.14,
+          "median": 8.18,
+          "p95": 15.26,
+          "p99": 15.26,
+          "mean": 8.93
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 500,
+        "input_tokens_rendered": 408,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.19,
+          "median": 8.3,
+          "p95": 16.21,
+          "p99": 16.21,
+          "mean": 9.12
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 512,
+        "input_tokens_rendered": 408,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.17,
+          "median": 8.3,
+          "p95": 16.9,
+          "p99": 16.9,
+          "mean": 9.18
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 550,
+        "input_tokens_rendered": 436,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.23,
+          "median": 8.43,
+          "p95": 16.88,
+          "p99": 16.88,
+          "mean": 9.33
+        },
+        "error": null
+      },
+      {
+        "target_tokens_approx": 600,
+        "input_tokens_rendered": 493,
+        "status_code": 200,
+        "truncated": false,
+        "latency": {
+          "n": 10,
+          "min": 8.21,
+          "median": 8.33,
+          "p95": 15.47,
+          "p99": 15.47,
+          "mean": 9.13
+        },
+        "error": null
+      }
+    ]
+  },
+  "combined_budget": {
+    "test": "combined_budget",
+    "results": [
+      {
+        "state_tokens_approx": 200,
+        "question_type": "noul",
+        "input_tokens_rendered": 178,
+        "status_code": 200,
+        "latency_ms": 9.06,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 200,
+        "question_type": "choice_4",
+        "input_tokens_rendered": 173,
+        "status_code": 200,
+        "latency_ms": 8.65,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 200,
+        "question_type": "choice_8",
+        "input_tokens_rendered": 205,
+        "status_code": 200,
+        "latency_ms": 8.73,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 200,
+        "question_type": "choice_16",
+        "input_tokens_rendered": 253,
+        "status_code": 200,
+        "latency_ms": 17.31,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 200,
+        "question_type": "choice_32",
+        "input_tokens_rendered": 317,
+        "status_code": 200,
+        "latency_ms": 9.06,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 200,
+        "question_type": "score_5",
+        "input_tokens_rendered": 188,
+        "status_code": 200,
+        "latency_ms": 10.67,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 300,
+        "question_type": "noul",
+        "input_tokens_rendered": 259,
+        "status_code": 200,
+        "latency_ms": 8.81,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 300,
+        "question_type": "choice_4",
+        "input_tokens_rendered": 254,
+        "status_code": 200,
+        "latency_ms": 8.63,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 300,
+        "question_type": "choice_8",
+        "input_tokens_rendered": 286,
+        "status_code": 200,
+        "latency_ms": 9.0,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 300,
+        "question_type": "choice_16",
+        "input_tokens_rendered": 334,
+        "status_code": 200,
+        "latency_ms": 9.23,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 300,
+        "question_type": "choice_32",
+        "input_tokens_rendered": 398,
+        "status_code": 200,
+        "latency_ms": 9.28,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 300,
+        "question_type": "score_5",
+        "input_tokens_rendered": 269,
+        "status_code": 200,
+        "latency_ms": 8.84,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 400,
+        "question_type": "noul",
+        "input_tokens_rendered": 327,
+        "status_code": 200,
+        "latency_ms": 8.53,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 400,
+        "question_type": "choice_4",
+        "input_tokens_rendered": 322,
+        "status_code": 200,
+        "latency_ms": 8.57,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 400,
+        "question_type": "choice_8",
+        "input_tokens_rendered": 354,
+        "status_code": 200,
+        "latency_ms": 8.99,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 400,
+        "question_type": "choice_16",
+        "input_tokens_rendered": 402,
+        "status_code": 200,
+        "latency_ms": 8.63,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 400,
+        "question_type": "choice_32",
+        "input_tokens_rendered": 466,
+        "status_code": 200,
+        "latency_ms": 17.83,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 400,
+        "question_type": "score_5",
+        "input_tokens_rendered": 337,
+        "status_code": 200,
+        "latency_ms": 8.94,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 450,
+        "question_type": "noul",
+        "input_tokens_rendered": 351,
+        "status_code": 200,
+        "latency_ms": 8.54,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 450,
+        "question_type": "choice_4",
+        "input_tokens_rendered": 346,
+        "status_code": 200,
+        "latency_ms": 8.89,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 450,
+        "question_type": "choice_8",
+        "input_tokens_rendered": 378,
+        "status_code": 200,
+        "latency_ms": 8.98,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 450,
+        "question_type": "choice_16",
+        "input_tokens_rendered": 426,
+        "status_code": 200,
+        "latency_ms": 9.18,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 450,
+        "question_type": "choice_32",
+        "input_tokens_rendered": 490,
+        "status_code": 200,
+        "latency_ms": 9.46,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 450,
+        "question_type": "score_5",
+        "input_tokens_rendered": 361,
+        "status_code": 200,
+        "latency_ms": 8.87,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 500,
+        "question_type": "noul",
+        "input_tokens_rendered": 406,
+        "status_code": 200,
+        "latency_ms": 8.39,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 500,
+        "question_type": "choice_4",
+        "input_tokens_rendered": 401,
+        "status_code": 200,
+        "latency_ms": 8.51,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 500,
+        "question_type": "choice_8",
+        "input_tokens_rendered": 433,
+        "status_code": 200,
+        "latency_ms": 8.72,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 500,
+        "question_type": "choice_16",
+        "input_tokens_rendered": 481,
+        "status_code": 200,
+        "latency_ms": 9.07,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 500,
+        "question_type": "choice_32",
+        "input_tokens_rendered": 512,
+        "status_code": 200,
+        "latency_ms": 8.58,
+        "truncated": false,
+        "error": null
+      },
+      {
+        "state_tokens_approx": 500,
+        "question_type": "score_5",
+        "input_tokens_rendered": 416,
+        "status_code": 200,
+        "latency_ms": 16.65,
+        "truncated": false,
+        "error": null
+      }
+    ]
+  },
+  "error_at_limits": {
+    "test": "error_handling_at_limits",
+    "results": [
+      {
+        "label": "state_exceeds_max",
+        "description": "State alone > 512 tokens",
+        "status_code": 200,
+        "latency_ms": 47.65,
+        "error_detail": null,
+        "answer": {
+          "q": {
+            "type": "noul",
+            "noul": 0.1702,
+            "rl_agent": {
+              "act_probability": 1.0,
+              "escalate_probability": 0.0,
+              "experimental": true
+            }
+          }
+        }
+      },
+      {
+        "label": "head_exceeds",
+        "description": "64 options (head might exceed 192)",
+        "status_code": 200,
+        "latency_ms": 39.61,
+        "error_detail": null,
+        "answer": {
+          "q": {
+            "type": "choice",
+            "choice": "o50",
+            "probabilities": {
+              "o0": 0.0,
+              "o1": 0.0,
+              "o2": 0.0,
+              "o3": 0.0,
+              "o4": 0.0,
+              "o5": 0.0,
+              "o6": 0.0,
+              "o7": 0.0,
+              "o8": 0.0,
+              "o9": 0.0,
+              "o10": 0.0,
+              "o11": 0.0,
+              "o12": 0.0,
+              "o13": 0.0,
+              "o14": 0.0,
+              "o15": 0.0,
+              "o16": 0.0,
+              "o17": 0.0,
+              "o18": 0.0,
+              "o19": 0.0,
+              "o20": 0.0,
+              "o21": 0.0,
+              "o22": 0.0,
+              "o23": 0.0,
+              "o24": 0.0,
+              "o25": 0.0,
+              "o26": 0.0,
+              "o27": 0.0,
+              "o28": 0.0,
+              "o29": 0.0,
+              "o30": 0.0,
+              "o31": 0.0,
+              "o32": 0.0,
+              "o33": 0.0,
+              "o34": 0.0,
+              "o35": 0.0,
+              "o36": 0.0,
+              "o37": 0.0,
+              "o38": 0.0,
+              "o39": 0.0,
+              "o40": 0.0,
+              "o41": 0.0,
+              "o42": 0.0,
+              "o43": 0.0,
+              "o44": 0.0,
+              "o45": 0.0,
+              "o46": 0.0,
+              "o47": 0.0,
+              "o48": 0.0,
+              "o49": 0.0,
+              "o50": 1.0,
+              "o51": 0.0,
+              "o52": 0.0,
+              "o53": 0.0,
+              "o54": 0.0,
+              "o55": 0.0,
+              "o56": 0.0,
+              "o57": 0.0,
+              "o58": 0.0,
+              "o59": 0.0,
+              "o60": 0.0,
+              "o61": 0.0,
+              "o62": 0.0,
+              "o63": 0.0
+            },
+            "confidence": 1.0,
+            "rl_agent": {
+              "act_probability": 1.0,
+              "escalate_probability": 0.0,
+              "experimental": true
+            }
+          }
+        }
+      },
+      {
+        "label": "head_exceeds_128",
+        "description": "128 options",
+        "status_code": 500,
+        "latency_ms": 16.78,
+        "error_detail": null,
+        "answer": null
+      },
+      {
+        "label": "empty_state",
+        "description": "Empty state body",
+        "status_code": 200,
+        "latency_ms": 8.77,
+        "error_detail": null,
+        "answer": {
+          "q": {
+            "type": "noul",
+            "noul": 0.1993,
+            "rl_agent": {
+              "act_probability": 1.0,
+              "escalate_probability": 0.0,
+              "experimental": true
+            }
+          }
+        }
+      },
+      {
+        "label": "null_state",
+        "description": "Null-like state",
+        "status_code": 200,
+        "latency_ms": 8.32,
+        "error_detail": null,
+        "answer": {
+          "q": {
+            "type": "noul",
+            "noul": 0.0652,
+            "rl_agent": {
+              "act_probability": 1.0,
+              "escalate_probability": 0.0,
+              "experimental": true
+            }
+          }
+        }
+      },
+      {
+        "label": "no_questions",
+        "description": "Empty questions object",
+        "status_code": 422,
+        "latency_ms": 8.83,
+        "error_detail": {
+          "detail": [
+            {
+              "type": "too_short",
+              "loc": [
+                "body",
+                "questions"
+              ],
+              "msg": "Dictionary should have at least 1 item after validation, not 0",
+              "input": {},
+              "ctx": {
+                "field_type": "Dictionary",
+                "min_length": 1,
+                "actual_length": 0
+              }
+            }
+          ]
+        },
+        "answer": null
+      },
+      {
+        "label": "malformed_type",
+        "description": "Invalid question type",
+        "status_code": 500,
+        "latency_ms": 15.37,
+        "error_detail": null,
+        "answer": null
+      },
+      {
+        "label": "missing_instructions",
+        "description": "Choice without instructions",
+        "status_code": 200,
+        "latency_ms": 26.15,
+        "error_detail": null,
+        "answer": {
+          "q": {
+            "type": "choice",
+            "choice": "b",
+            "probabilities": {
+              "a": 0.4152,
+              "b": 0.5848
+            },
+            "confidence": 0.0209,
+            "rl_agent": {
+              "act_probability": 1.0,
+              "escalate_probability": 0.0,
+              "experimental": true
+            }
+          }
+        }
+      },
+      {
+        "label": "score_no_criteria",
+        "description": "Score without criteria",
+        "status_code": 500,
+        "latency_ms": 14.67,
+        "error_detail": null,
+        "answer": null
+      },
+      {
+        "label": "noul_missing",
+        "description": "Noul without instructions",
+        "status_code": 200,
+        "latency_ms": 27.05,
+        "error_detail": null,
+        "answer": {
+          "q": {
+            "type": "noul",
+            "noul": 0.2042,
+            "rl_agent": {
+              "act_probability": 1.0,
+              "escalate_probability": 0.0,
+              "experimental": true
+            }
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laya Playground</title>
+<link rel="stylesheet" href="/playground.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="site-head">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true">L</span>
+    <span class="brand-name">Laya <em>Playground</em></span>
+    <span class="brand-sub">learning workbench</span>
+  </div>
+  <div class="conn-strip" id="connStrip" aria-live="polite">
+    <span class="conn-pill" id="connState">service: unknown</span>
+    <span class="conn-pill" id="modelState">model: unknown</span>
+    <span class="conn-pill" id="providerState">provider: unknown</span>
+    <button class="btn ghost small" id="btnRefreshHealth" type="button">Refresh health</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- Intro -->
+  <section class="card intro" aria-labelledby="intro-h">
+    <h1 id="intro-h" class="h-display">Laya is a decision model, not a chatbot.</h1>
+    <p class="lead">Give it a <strong>state</strong> (ticket, email, JSON) and ask a <strong>typed question</strong>; it returns <strong>probabilities</strong>, not generated prose. Edit below, press <strong>Run</strong>, then try to break it.</p>
+    <div class="prim-key" aria-label="primitive key">
+      <div class="prim-key-item">
+        <svg class="illust" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor">
+          <!-- state input: small rounded rect flowing right -->
+          <rect x="3" y="19" width="9" height="10" rx="2.5" stroke-width="2.5"/>
+          <!-- connection line to node -->
+          <path d="M12 24 H17" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- decision node -->
+          <circle cx="20" cy="24" r="3.5" fill="currentColor" stroke="none" opacity=".85"/>
+          <!-- branches to 3 option cards -->
+          <path d="M23.5 24 Q28 24 30 16 H34" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>
+          <path d="M23.5 24 Q28 24 30 24 H34" stroke-width="2.2" stroke-linecap="round" opacity=".95"/>
+          <path d="M23.5 24 Q28 24 30 32 H34" stroke-width="2.2" stroke-linecap="round" opacity=".8"/>
+          <!-- option 1 (top): shorter bar, less prob -->
+          <rect x="34" y="13.5" width="10" height="5" rx="2.5" stroke-width="2" opacity=".45"/>
+          <rect x="35.5" y="14.5" width="4" height="3" rx="1.5" fill="currentColor" stroke="none" opacity=".4"/>
+          <!-- option 2 (middle, winner): brighter, longer bar -->
+          <rect x="34" y="21.5" width="10" height="5" rx="2.5" stroke-width="2.2" opacity=".95"/>
+          <rect x="35.5" y="22.5" width="7" height="3" rx="1.5" fill="currentColor" stroke="none" opacity=".85"/>
+          <!-- option 3 (bottom): shorter bar -->
+          <rect x="34" y="29.5" width="10" height="5" rx="2.5" stroke-width="2" opacity=".45"/>
+          <rect x="35.5" y="30.5" width="5" height="3" rx="1.5" fill="currentColor" stroke="none" opacity=".4"/>
+        </svg>
+        <div><strong>Choice</strong><span>P(key) over your options</span></div>
+      </div>
+      <div class="prim-key-item">
+        <svg class="illust" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor">
+          <!-- state input -->
+          <rect x="3" y="19" width="9" height="10" rx="2.5" stroke-width="2.5"/>
+          <path d="M12 24 H16" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- node -->
+          <circle cx="19" cy="24" r="3.5" fill="currentColor" stroke="none" opacity=".85"/>
+          <!-- connection to scale -->
+          <path d="M22.5 24 H26" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- ordered scale: 5 level bars (discrete probabilities) -->
+          <rect x="27" y="30" width="2.5" height="6" rx="1.2" fill="currentColor" stroke="none" opacity=".3"/>
+          <rect x="31" y="27" width="2.5" height="9" rx="1.2" fill="currentColor" stroke="none" opacity=".5"/>
+          <rect x="35" y="22" width="2.5" height="14" rx="1.2" fill="currentColor" stroke="none" opacity=".75"/>
+          <rect x="39" y="26" width="2.5" height="10" rx="1.2" fill="currentColor" stroke="none" opacity=".5"/>
+          <rect x="43" y="29" width="2.5" height="7" rx="1.2" fill="currentColor" stroke="none" opacity=".3"/>
+          <!-- baseline axis -->
+          <path d="M26 36 H45.5" stroke-width="1.5" stroke-linecap="round" opacity=".35"/>
+          <!-- expected score marker (between levels, not at a level) -->
+          <path d="M37 14 V18" stroke-width="2.5" stroke-linecap="round" opacity=".95"/>
+          <circle cx="37" cy="17" r="1.8" fill="currentColor" stroke="none" opacity=".95"/>
+          <!-- faint bracket showing it falls between levels -->
+          <path d="M35 14 Q37 12 39 14" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+        </svg>
+        <div><strong>Score</strong><span>weighted levels, 0 = lowest</span></div>
+      </div>
+      <div class="prim-key-item">
+        <svg class="illust" viewBox="0 0 48 48" aria-hidden="true" fill="none" stroke="currentColor">
+          <!-- state input (left) -->
+          <rect x="3" y="19" width="9" height="10" rx="2.5" stroke-width="2.5"/>
+          <path d="M12 24 H16" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- node (convergence point) -->
+          <circle cx="19" cy="24" r="3.5" fill="currentColor" stroke="none" opacity=".85"/>
+          <!-- split into true (top) and false (bottom) -->
+          <path d="M22.5 24 Q27 24 29 16 H33" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M22.5 24 Q27 24 29 32 H33" stroke-width="2.2" stroke-linecap="round"/>
+          <!-- P(true) bar: wider segment, brighter -->
+          <rect x="33" y="14" width="11" height="4.5" rx="2.2" stroke-width="2" opacity=".95"/>
+          <rect x="34.5" y="15" width="7.5" height="2.5" rx="1.2" fill="currentColor" stroke="none" opacity=".85"/>
+          <!-- P(false) bar: narrower segment, dimmer -->
+          <rect x="33" y="30" width="11" height="4.5" rx="2.2" stroke-width="2" opacity=".45"/>
+          <rect x="34.5" y="31" width="3.5" height="2.5" rx="1.2" fill="currentColor" stroke="none" opacity=".35"/>
+          <!-- subtle uncertainty indicator: small gap/midpoint marker -->
+          <circle cx="40" cy="24" r="1.5" fill="currentColor" stroke="none" opacity=".35"/>
+        </svg>
+        <div><strong>Noul</strong><span>P(true) for one proposition</span></div>
+      </div>
+      <div class="prim-key-item"><svg class="illust" viewBox="0 0 48 48" aria-hidden="true"><path d="M6 10 H18 M6 24 H14 M6 38 H18 M30 10 H42 M30 38 H42 M24 24 H24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M18 10 Q26 10 26 24 M18 38 Q26 38 26 24 M26 24 H42 M30 10 H30 M30 38 H30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/></svg><div><strong>Batch</strong><span>many questions, one pass</span></div></div>
+    </div>
+    <p class="fine">The human CLI is <code>.venv/bin/laya</code> — <code>laya health</code>, <code>laya choice --state … --questions …</code>. Agent MCP tools (<code>laya_system_one</code> etc.) exist too but this page only talks to <code>/api/query</code> and <code>/api/health</code>.</p>
+    <div class="notice warn" role="note">
+      <strong>Separate HTTP requests are NOT coalesced.</strong> The 5&nbsp;ms request-batcher window does not merge distinct browser submissions into one inference pass — <code>RequestBatcher._process_batch()</code> processes queued payloads serially. Do not raise HTTP concurrency expecting throughput. Several questions inside <em>one</em> <code>/system_one</code> request, however, are answered in one model forward pass — that is what the Batch tab means. See <code>benchmarks/HARDENING-REPORT.md</code> §3 and <code>src/laya_server/batcher.py</code>.
+    </div>
+  </section>
+
+  <!-- Request panel -->
+  <section class="grid main">
+    <div class="card input-col">
+      <!-- State editor -->
+      <div class="state-block">
+        <div class="state-head">
+          <h2 class="h-label">State</h2>
+          <div class="seg" role="tablist" aria-label="state format">
+            <button type="button" id="stateModeText" class="seg-btn active" aria-pressed="true">Plain text</button>
+            <button type="button" id="stateModeJson" class="seg-btn" aria-pressed="false">JSON</button>
+          </div>
+        </div>
+        <p class="fine" id="stateModeNote">Sent to the model as a JSON string exactly as typed. Laya sees the state as input content — not as an instruction to generate text.</p>
+        <textarea id="stateText" class="state-input" rows="7" spellcheck="false" placeholder="e.g. Ticket #4821: customer says the nightly backup failed again after the storage upgrade…"></textarea>
+        <textarea id="stateJson" class="state-input hidden" rows="7" spellcheck="false" placeholder='e.g. {"ticket": 4821, "summary": "backup failed again"}'></textarea>
+        <p class="err inline hidden" id="stateJsonError" role="alert"></p>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs" role="tablist" aria-label="question type">
+        <button type="button" class="tab active" role="tab" id="tab-choice" aria-selected="true" aria-controls="panel-choice" data-type="choice">Choice</button>
+        <button type="button" class="tab" role="tab" id="tab-score" aria-selected="false" aria-controls="panel-score" data-type="score">Score</button>
+        <button type="button" class="tab" role="tab" id="tab-noul" aria-selected="false" aria-controls="panel-noul" data-type="noul">Noul</button>
+        <button type="button" class="tab" role="tab" id="tab-batch" aria-selected="false" aria-controls="panel-batch" data-type="batch">Batch</button>
+        <button type="button" class="tab" role="tab" id="tab-raw" aria-selected="false" aria-controls="panel-raw" data-type="raw">Raw query</button>
+      </div>
+
+      <!-- Choice panel -->
+      <div class="panel" id="panel-choice" role="tabpanel" aria-labelledby="tab-choice">
+        <p class="ask-line">What question does this answer? <em>“Which option is most likely for this state?”</em></p>
+        <label class="field-label" for="choice-ins">Question / instructions</label>
+        <textarea id="choice-ins" class="field" rows="2" placeholder="Which category does this support ticket belong to?"></textarea>
+        <div class="rows-head">
+          <span class="field-label" style="margin:0">Options — a <strong>key</strong> identifies the option in the answer; an optional <strong>description</strong> adds context but spends tokens.</span>
+        </div>
+        <div class="opt-rows" id="choiceRows"></div>
+        <div class="row-actions">
+          <button type="button" class="btn ghost small" id="btnAddChoice">+ Add option</button>
+        </div>
+        <p class="err inline hidden" id="choiceError" role="alert"></p>
+        <div class="notice small">Practical initial experiments: <strong>2–32 options</strong>. More options and longer descriptions consume the <strong>192-token head budget</strong>; tested 128 short options returned HTTP 500. There is no universal safe option count independent of text lengths — <code>benchmarks/HARDENING-REPORT.md</code> §2.1.</div>
+      </div>
+
+      <!-- Score panel -->
+      <div class="panel hidden" id="panel-score" role="tabpanel" aria-labelledby="tab-score">
+        <p class="ask-line">What question does this answer? <em>“On your ordered rubric, where does this state land?”</em></p>
+        <label class="field-label" for="score-ins">Question / instructions</label>
+        <textarea id="score-ins" class="field" rows="2" placeholder="How urgent is this ticket?"></textarea>
+        <p class="fine">Ordered level rows, <strong>lowest first</strong>. Guided mode suggests <strong>2–10 levels</strong>.</p>
+        <div class="level-note">Index <strong>0 = lowest</strong>. The score is a probability-weighted mean over 0…N−1 — <strong>not</strong> a 0–1 probability and <strong>not</strong> a calibrated urgency scale.</div>
+        <div class="opt-rows" id="scoreRows"></div>
+        <div class="row-actions">
+          <button type="button" class="btn ghost small" id="btnAddScore">+ Add level</button>
+        </div>
+        <p class="err inline hidden" id="scoreError" role="alert"></p>
+        <div class="notice small warn">Hardening probes found <strong>non-monotonic ordinal results</strong> — do not recommend score as a reliable priority ranking. A one-level rubric caused a 500 crash, and 11 levels were accepted despite the documented 2–10 range (kept available in the break-it lab, with a warning — not endorsement). <code>benchmarks/HARDENING-REPORT.md</code> §2.2.</div>
+      </div>
+
+      <!-- Noul panel -->
+      <div class="panel hidden" id="panel-noul" role="tabpanel" aria-labelledby="tab-noul">
+        <p class="ask-line">What question does this answer? <em>“Is this proposition true given the state?”</em></p>
+        <label class="field-label" for="noul-ins">Proposition / question (the <code>instructions</code> field)</label>
+        <textarea id="noul-ins" class="field" rows="3" placeholder="The customer has already been offered a refund."></textarea>
+        <details class="crit-details">
+          <summary>True / false descriptions <span class="fine">(optional — learn how criteria affect the answer)</span></summary>
+          <label class="field-label" for="noul-true">True description</label>
+          <input id="noul-true" class="field" placeholder="yes, the statement holds">
+          <label class="field-label" for="noul-false">False description</label>
+          <input id="noul-false" class="field" placeholder="no, the statement does not hold">
+        </details>
+        <div class="notice small warn">Hardening probes found <strong>negation blindness</strong> and factual mismatches: a high probability is not proof the statement is true. <code>benchmarks/HARDENING-REPORT.md</code> §2.3.</div>
+      </div>
+
+      <!-- Batch panel -->
+      <div class="panel hidden" id="panel-batch" role="tabpanel" aria-labelledby="tab-batch">
+        <p class="ask-line">What question does this answer? <em>“Several typed questions about the same state, in one forward pass.”</em></p>
+        <div class="notice" id="batchCoalesceNote" role="note">
+          <strong>Batch ≠ simultaneous HTTP requests.</strong> One POST carries a <code>questions</code> map of every ID → spec; the service answers all of them in <em>one model forward pass</em>. That is not cross-request coalescing. Distinct HTTP requests remain serial at the worker today. See the warning above the form and <code>benchmarks/HARDENING-REPORT.md</code> §3.
+        </div>
+        <div id="batchQuestions"></div>
+        <div class="row-actions">
+          <button type="button" class="btn ghost small" id="btnAddBatchQ">+ Add question</button>
+        </div>
+        <p class="err inline hidden" id="batchError" role="alert"></p>
+        <p class="fine"><code>usage.input_tokens</code> aggregates rendered tokens across each question’s sequence — it is not a single 512-token pool for the whole multi-question request.</p>
+      </div>
+
+      <!-- Raw panel -->
+      <div class="panel hidden" id="panel-raw" role="tabpanel" aria-labelledby="tab-raw">
+        <p class="ask-line">What question does this answer? <em>Whatever you want — the full <code>/system_one</code> body, untouched.</em></p>
+        <p class="fine">Starter template below. <strong>Run raw query</strong> posts this body verbatim. Nothing is rewritten into guided fields; nothing auto-submits while you type. Only syntactically invalid JSON is blocked locally — server-rejected payloads pass through for exploration. Raw and guided input are independent: pasting here cannot silently alter a guided example.</p>
+        <textarea id="rawBody" class="state-input mono" rows="14" spellcheck="false"></textarea>
+        <p class="err inline hidden" id="rawError" role="alert"></p>
+      </div>
+
+      <div class="run-bar">
+        <button type="button" class="btn primary" id="btnRun">Run</button>
+        <span class="fine" id="runHint">One request. Nothing runs until you press Run.</span>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="results-col" id="resultsCol" aria-live="polite">
+      <div class="card placeholder" id="resultsPlaceholder">
+        <svg class="illust big" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="17" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="4 5"/><path d="M24 14 V26 L31 31" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>
+        <p class="lead">Press <strong>Run</strong> to see what Laya actually returns. The result shows the top-line answer and chart first, explanatory notes second, and a collapsed <em>Raw Response</em> last.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Break-it lab -->
+  <section class="card" aria-labelledby="break-h">
+    <h2 class="h-display" id="break-h">Try to break it</h2>
+    <p class="fine">Each button <strong>populates the form only</strong> — nothing runs until you press Run. Expected behaviour is from the hardening probes, and the model can still behave differently on your state. No unload/restart/stress flood controls exist on purpose.</p>
+    <div class="probe-grid">
+      <button type="button" class="btn probe" data-probe="empty-state"><strong>Empty state</strong><span>plain-text empty state + noul — currently accepted; output can be degenerate.</span></button>
+      <button type="button" class="btn probe" data-probe="huge-state"><strong>Huge state</strong><span>long state with a relevant fact near the end — silent truncation may remove decisive facts.</span></button>
+      <button type="button" class="btn probe" data-probe="many-options"><strong>Lots of options</strong><span>choice with ~128 short options — observed head overflow / HTTP 500, not a clean client error.</span></button>
+      <button type="button" class="btn probe" data-probe="score-10"><strong>10-level score</strong><span>upper end of the documented range — inspect the entire distribution.</span></button>
+      <button type="button" class="btn probe" data-probe="score-11"><strong>11-level score</strong><span>documented invalid, observed accepted — demonstration, <em>not</em> endorsement.</span></button>
+      <button type="button" class="btn probe" data-probe="score-1"><strong>1-level score (raw)</strong><span>known HTTP 500 — deliberately bypasses the guided safeguards via Raw query.</span></button>
+      <button type="button" class="btn probe" data-probe="negation"><strong>Negated proposition</strong><span>noul with “NOT” vs an otherwise equivalent positive — observe measured negation weakness; run each yourself.</span></button>
+      <button type="button" class="btn probe" data-probe="bad-type"><strong>Bad question type (raw)</strong><span>unknown <code>type</code> in a raw query — upstream may return 500 rather than the expected 4xx.</span></button>
+    </div>
+    <p class="fine">Measured limits live in <code>benchmarks/HARDENING-REPORT.md</code> — §2.1 (options), §2.2 (levels), §2.3 (noul), §3 (coalescing), §4 (truncation).</p>
+  </section>
+
+  <!-- Explore more -->
+  <section class="card" aria-labelledby="explore-h">
+    <h2 class="h-display" id="explore-h">Explore more</h2>
+    <p class="fine">Each card opens inline — no navigation, no fetch. One idea, a concrete next try, and the real reference.</p>
+    <div class="explore-grid">
+      <details class="explore">
+        <summary>Multi-select (composition, not a fourth primitive)</summary>
+        <p>Compose one noul question per candidate inside one batch request; compare all P(true) values. Do not imply a native multi-select type — the model only knows choice / score / noul.</p>
+        <p class="try">Try: turn your support-triage state into a batch with <code>c1</code>–<code>c3</code> noul questions “Applies: billing” / “Applies: account” / “Applies: technical”, and compare against a single choice on the same state.</p>
+        <p class="ref">Refs: <code>src/laya_server/primitives.py</code> (multi_select), <code>README.md</code> §Python primitives.</p>
+      </details>
+      <details class="explore">
+        <summary>Ranking (with a shared rubric — and a caveat)</summary>
+        <p>Score each candidate against one shared ordered rubric as separate score questions in one request. But the hardening probes measured <strong>score non-monotonicity</strong>, so rankings need independent evaluation before you trust them.</p>
+        <p class="try">Try: rank three candidate fixes with a shared 5-level rubric; then re-run each as its own request and check the distribution shape doesn’t reorder them.</p>
+        <p class="ref">Refs: <code>src/laya_server/primitives.py</code> (rank), <code>benchmarks/HARDENING-REPORT.md</code> §2.2b.</p>
+      </details>
+      <details class="explore">
+        <summary>Inversion (same decision, different framing)</summary>
+        <p>Ask the same decision as one choice question and as several binary noul questions. Differences between framings are observations, not an accuracy verdict — that would need the deferred semantic corpus.</p>
+        <p class="try">Try: your triage state as one choice (billing/account/technical) plus three noul propositions, one per category; note where the modes disagree.</p>
+        <p class="ref">Ref: <code>benchmarks/FUTURE-METHODS.md</code> (deferred research).</p>
+      </details>
+      <details class="explore">
+        <summary>Many questions vs many requests</summary>
+        <p>One request with many questions is one forward pass. Multiple HTTP requests are processed serially at the worker today — the batcher’s 5 ms window does not merge them into one GPU call.</p>
+        <p class="try">Try: put all three of your questions in the Batch tab and run once; then note that submitting them as three separate runs does not share a pass.</p>
+        <p class="ref">Refs: <code>src/laya_server/worker.py</code>, <code>src/laya_server/batcher.py</code>, <code>benchmarks/HARDENING-REPORT.md</code> §3.</p>
+      </details>
+      <details class="explore">
+        <summary>Token budgets and silent truncation</summary>
+        <p>The ~512-token limit applies per rendered question sequence (type, instructions, option/level head, state); the head has its own ~192-token budget. <code>usage.input_tokens</code> is measured <em>after</em> any truncation and does not prove the original state fitted. The page cannot compute the exact tokenizer count — so there is no fake remaining-token meter or automatic “truncated” flag.</p>
+        <p class="try">Try: the <em>Huge state</em> probe — the decisive fact sits near the end; see whether the model still uses it.</p>
+        <p class="ref">Refs: <code>src/laya_server/sequence.py</code>, <code>benchmarks/HARDENING-REPORT.md</code> §4.</p>
+      </details>
+      <details class="explore">
+        <summary>What has actually been tested</summary>
+        <p>Safe operating envelope, scaling curves, cache/latency behaviour, and 8 identified bugs/issues — plus the deferred adoption-evaluation methodology. Prior docs sometimes describe coalescing as functional; the measured behaviour is in the hardening report.</p>
+        <p class="try">Try: read the safe-operating-envelope table before pushing your probe further.</p>
+        <p class="ref">Refs: <code>benchmarks/HARDENING-REPORT.md</code>, <code>benchmarks/README.md</code>, <code>ROADMAP.md</code> (hardening spec: <code>benchmarks/SPEC-HARDENING.md</code>).</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <span>Local-only learning instrument · upstream <code>http://127.0.0.1:11448</code> via playground gateway <code>/api/query</code> · no persistence, no clipboard, no history</span>
+</footer>
+
+<script src="/playground.js"></script>
+</body>
+</html>

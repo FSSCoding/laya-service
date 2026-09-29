@@ -166,9 +166,16 @@ def build_sequence(
         seq.extend(o)
     seq.append(ids.sep)
     room = max(0, max_len - len(seq) - 1)
-    st = encode(scrub(serialize_state(state)))[:room]
+    st_raw = encode(scrub(serialize_state(state)))
+    truncated = len(st_raw) > room
+    st = st_raw[:room]
     seq.extend(st)
     seq.append(ids.sep)
     ids_out = seq[:max_len]
     markers_out = [m for m in markers if m < max_len]
-    return {"ids": ids_out, "markers": markers_out}
+    return {
+        "ids": ids_out,
+        "markers": markers_out,
+        "truncated": truncated,
+        "original_state_tokens": len(st_raw),
+    }

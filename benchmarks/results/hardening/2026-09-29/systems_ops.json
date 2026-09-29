@@ -1,0 +1,347 @@
+{
+  "latency": {
+    "test": "latency_by_question_count",
+    "results": [
+      {
+        "n_questions": 1,
+        "latency": {
+          "n": 50,
+          "min": 8.09,
+          "median": 8.22,
+          "p95": 14.69,
+          "p99": 16.8,
+          "mean": 8.81
+        }
+      },
+      {
+        "n_questions": 3,
+        "latency": {
+          "n": 50,
+          "min": 8.12,
+          "median": 8.43,
+          "p95": 14.83,
+          "p99": 16.02,
+          "mean": 9.11
+        }
+      },
+      {
+        "n_questions": 10,
+        "latency": {
+          "n": 50,
+          "min": 8.24,
+          "median": 8.68,
+          "p95": 16.52,
+          "p99": 16.63,
+          "mean": 9.36
+        }
+      },
+      {
+        "n_questions": 24,
+        "latency": {
+          "n": 50,
+          "min": 8.38,
+          "median": 8.76,
+          "p95": 16.5,
+          "p99": 20.68,
+          "mean": 9.46
+        }
+      },
+      {
+        "n_questions": 50,
+        "latency": {
+          "n": 50,
+          "min": 8.75,
+          "median": 9.16,
+          "p95": 15.96,
+          "p99": 17.14,
+          "mean": 9.81
+        }
+      }
+    ]
+  },
+  "cold_warm": {
+    "test": "cold_warm",
+    "results": {
+      "cold_first_ms": 534.55,
+      "warm_after_cold": {
+        "n": 4,
+        "min": 8.35,
+        "median": 8.48,
+        "p95": 8.97,
+        "p99": 8.97,
+        "mean": 8.57
+      },
+      "warm_50_reps": {
+        "n": 50,
+        "min": 8.14,
+        "median": 8.34,
+        "p95": 15.8,
+        "p99": 17.82,
+        "mean": 9.05
+      },
+      "health_before": {
+        "status": "degraded",
+        "model_loaded": false,
+        "providers": [],
+        "uptime_s": 17388.63,
+        "version": "0.3.0"
+      }
+    }
+  },
+  "cache": {
+    "test": "cache_behaviour",
+    "results": {
+      "hit": {
+        "stats": {
+          "n": 50,
+          "min": 8.14,
+          "median": 8.34,
+          "p95": 17.04,
+          "p99": 22.68,
+          "mean": 9.21
+        },
+        "n_cached_true": 50,
+        "n_total": 50
+      },
+      "miss": {
+        "stats": {
+          "n": 20,
+          "min": 25.01,
+          "median": 25.85,
+          "p95": 35.94,
+          "p99": 35.94,
+          "mean": 26.72
+        }
+      },
+      "key_sensitivity": {
+        "description": "1-char body change",
+        "cached": false,
+        "latency_ms": 33.15,
+        "expected_miss": true
+      }
+    }
+  },
+  "vram_ram": {
+    "test": "vram_ram",
+    "results": {
+      "unloaded": {
+        "gpus": {
+          "0": {
+            "memory_used_mb": 2878,
+            "memory_total_mb": 24576,
+            "utilization_pct": 62
+          },
+          "1": {
+            "memory_used_mb": 6740,
+            "memory_total_mb": 24576,
+            "utilization_pct": 0
+          }
+        },
+        "ram_rss_kb": 222243
+      },
+      "loaded": {
+        "gpus": {
+          "0": {
+            "memory_used_mb": 2878,
+            "memory_total_mb": 24576,
+            "utilization_pct": 15
+          },
+          "1": {
+            "memory_used_mb": 8814,
+            "memory_total_mb": 24576,
+            "utilization_pct": 0
+          }
+        },
+        "ram_rss_kb": 232296
+      },
+      "under_load": {
+        "gpus": {
+          "0": {
+            "memory_used_mb": 2878,
+            "memory_total_mb": 24576,
+            "utilization_pct": 16
+          },
+          "1": {
+            "memory_used_mb": 8814,
+            "memory_total_mb": 24576,
+            "utilization_pct": 0
+          }
+        },
+        "ram_rss_kb": 232302
+      }
+    }
+  },
+  "concurrency": {
+    "test": "concurrency_sweep",
+    "results": [
+      {
+        "n_concurrent": 1,
+        "n_requests": 200,
+        "throughput_rps": 0.35,
+        "latency": {
+          "n": 200,
+          "min": 1276.71,
+          "median": 2918.59,
+          "p95": 3815.56,
+          "p99": 3886.73,
+          "mean": 2872.49
+        },
+        "n_errors": 0
+      },
+      {
+        "n_concurrent": 4,
+        "n_requests": 200,
+        "throughput_rps": 0.31,
+        "latency": {
+          "n": 200,
+          "min": 853.97,
+          "median": 3410.45,
+          "p95": 4155.03,
+          "p99": 4384.72,
+          "mean": 3230.82
+        },
+        "n_errors": 0
+      },
+      {
+        "n_concurrent": 16,
+        "n_requests": 200,
+        "throughput_rps": 0.3,
+        "latency": {
+          "n": 200,
+          "min": 547.54,
+          "median": 3420.11,
+          "p95": 4346.53,
+          "p99": 4431.82,
+          "mean": 3332.47
+        },
+        "n_errors": 0
+      },
+      {
+        "n_concurrent": 64,
+        "n_requests": 200,
+        "throughput_rps": 0.32,
+        "latency": {
+          "n": 200,
+          "min": 717.34,
+          "median": 3298.82,
+          "p95": 4149.67,
+          "p99": 4267.99,
+          "mean": 3173.8
+        },
+        "n_errors": 0
+      },
+      {
+        "n_concurrent": 128,
+        "n_requests": 200,
+        "throughput_rps": 0.31,
+        "latency": {
+          "n": 200,
+          "min": 290.72,
+          "median": 3377.4,
+          "p95": 4277.11,
+          "p99": 4368.8,
+          "mean": 3242.5
+        },
+        "n_errors": 0
+      },
+      {
+        "n_concurrent": 256,
+        "n_requests": 256,
+        "throughput_rps": 0.25,
+        "latency": {
+          "n": 256,
+          "min": 426.97,
+          "median": 4167.07,
+          "p95": 5410.82,
+          "p99": 5583.26,
+          "mean": 4035.45
+        },
+        "n_errors": 0
+      },
+      {
+        "n_concurrent": 512,
+        "n_requests": 512,
+        "throughput_rps": 0.09,
+        "latency": {
+          "n": 512,
+          "min": 350.92,
+          "median": 11582.74,
+          "p95": 12540.9,
+          "p99": 12666.79,
+          "mean": 10533.51
+        },
+        "n_errors": 0
+      }
+    ]
+  },
+  "error_recovery": {
+    "test": "error_recovery",
+    "results": {
+      "malformed_requests": [
+        {
+          "payload_keys": [
+            "state",
+            "questions"
+          ],
+          "status": 422,
+          "detail": "{\"detail\":[{\"type\":\"too_short\",\"loc\":[\"body\",\"questions\"],\"msg\":\"Dictionary should have at least 1 i"
+        },
+        {
+          "payload_keys": [
+            "state",
+            "questions"
+          ],
+          "status": 422,
+          "detail": "{\"detail\":[{\"type\":\"too_short\",\"loc\":[\"body\",\"questions\"],\"msg\":\"Dictionary should have at least 1 i"
+        },
+        {
+          "payload_keys": [
+            "state",
+            "questions"
+          ],
+          "status": 500,
+          "detail": "{\"error\":{\"message\":\"'bogus'\",\"type\":\"server_error\",\"param\":null,\"code\":null}}"
+        },
+        {
+          "payload_keys": [
+            "state",
+            "questions"
+          ],
+          "status": 422,
+          "detail": "{\"detail\":[{\"type\":\"too_short\",\"loc\":[\"body\",\"questions\"],\"msg\":\"Dictionary should have at least 1 i"
+        },
+        {
+          "payload_keys": [
+            "state",
+            "questions"
+          ],
+          "status": 422,
+          "detail": "{\"detail\":[{\"type\":\"dict_type\",\"loc\":[\"body\",\"questions\"],\"msg\":\"Input should be a valid dictionary\""
+        },
+        {
+          "payload_keys": [
+            "state",
+            "questions"
+          ],
+          "status": 200,
+          "detail": "{\"model\":\"laya\",\"answers\":{\"q\":{\"type\":\"noul\",\"noul\":0.1196,\"rl_agent\":{\"act_probability\":1.0,\"escal"
+        }
+      ],
+      "health_after": {
+        "status": "ok",
+        "model_loaded": true,
+        "providers": [
+          "CUDAExecutionProvider",
+          "CPUExecutionProvider"
+        ],
+        "uptime_s": 17450.7,
+        "version": "0.3.0"
+      },
+      "recovery_check": {
+        "status_code": 200,
+        "latency_ms": 36.02,
+        "functional": true
+      }
+    }
+  }
+}

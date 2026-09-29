@@ -1,0 +1,158 @@
+{
+  "choice": {
+    "max_options_working": 112,
+    "first_error": null,
+    "first_truncation": {
+      "n_options": 128,
+      "status_code": 500,
+      "input_tokens": null,
+      "n_options_returned": 0,
+      "max_probability": null,
+      "entropy_bits": null,
+      "confidence": null,
+      "truncated": true,
+      "latency": {
+        "n": 20,
+        "min": 14.38,
+        "median": 15.98,
+        "p95": 23.47,
+        "p99": 23.47,
+        "mean": 16.84
+      },
+      "error": null
+    },
+    "ordering_sensitive": false
+  },
+  "score": {
+    "valid_levels": [
+      2,
+      3,
+      4,
+      5,
+      7,
+      10,
+      11
+    ],
+    "rejected_levels": [
+      1,
+      0,
+      -1
+    ]
+  },
+  "state_tokens": {
+    "max_rendered_tokens": 493,
+    "truncation_points": []
+  },
+  "error_behaviours": [
+    {
+      "label": "state_exceeds_max",
+      "status": 200,
+      "detail": null
+    },
+    {
+      "label": "head_exceeds",
+      "status": 200,
+      "detail": null
+    },
+    {
+      "label": "head_exceeds_128",
+      "status": 500,
+      "detail": null
+    },
+    {
+      "label": "empty_state",
+      "status": 200,
+      "detail": null
+    },
+    {
+      "label": "null_state",
+      "status": 200,
+      "detail": null
+    },
+    {
+      "label": "no_questions",
+      "status": 422,
+      "detail": {
+        "detail": [
+          {
+            "type": "too_short",
+            "loc": [
+              "body",
+              "questions"
+            ],
+            "msg": "Dictionary should have at least 1 item after validation, not 0",
+            "input": {},
+            "ctx": {
+              "field_type": "Dictionary",
+              "min_length": 1,
+              "actual_length": 0
+            }
+          }
+        ]
+      }
+    },
+    {
+      "label": "malformed_type",
+      "status": 500,
+      "detail": null
+    },
+    {
+      "label": "missing_instructions",
+      "status": 200,
+      "detail": null
+    },
+    {
+      "label": "score_no_criteria",
+      "status": 500,
+      "detail": null
+    },
+    {
+      "label": "noul_missing",
+      "status": 200,
+      "detail": null
+    }
+  ],
+  "batch": {
+    "max_concurrent_tested": 513,
+    "overflow_behaviour": [
+      {
+        "n_concurrent": 513,
+        "n_requests": 513,
+        "throughput_rps": 0.23,
+        "latency": {
+          "n": 513,
+          "min": 366.79,
+          "median": 4391.14,
+          "p95": 6763.82,
+          "p99": 7020.7,
+          "mean": 4297.78
+        },
+        "n_errors": 0,
+        "n_cached": 0
+      }
+    ]
+  },
+  "coalescing_window": {
+    "offsets_tested": [
+      0,
+      2,
+      4,
+      6,
+      8,
+      12,
+      20
+    ],
+    "window_size_ms": 5
+  },
+  "cold_start_ms": 534.55,
+  "cache": {
+    "hit_latency_ms": 8.34,
+    "miss_latency_ms": 25.85
+  },
+  "max_throughput_rps": 0.35,
+  "validation": {
+    "n_probes": 0,
+    "n_clean_rejections": 0,
+    "rejection_details": []
+  }
+}

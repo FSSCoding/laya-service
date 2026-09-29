@@ -266,25 +266,25 @@ The concurrency sweep in §3.2 covers this. Throughput degrades from 0.5 rps (�
 
 | # | Severity | Description |
 |---|---|---|
-| 1 | **HIGH** | **Coalescing doesn't work:** `RequestBatcher._process_batch` processes requests serially. The 5ms window and batch merging provide no throughput benefit. `batch_coalesced: 0` always. |
+| 1 | **HIGH** | **Coalescing fixed:** `RequestBatcher._process_batch` previously processed requests serially. Now merges payloads into a single forward pass via `worker.system_many()`. The ONNX graph supports dynamic batch dimension (`['batch', 'seq']`), enabling true multi-state coalescing. |
 | 2 | **HIGH** | **Score 1-level crash:** 1-level score → ONNXRuntimeError (500). Should be rejected at validation (400). |
-| 3 | **HIGH** | **Score monotonicity failure:** Score primitive does not produce monotonic ordinal rankings. Not suitable for ranking decisions. |
+| 3 | **HIGH** | **Score monotonicity failure:** Score primitive does not produce monotonic ordinal rankings. Not suitable for ranking decisions without domain validation. Pairwise `choice` may be an alternative worth testing. |
 | 4 | **MED** | **Silent truncation at max_len:** No warning or indicator when state is truncated at 512 tokens. Client has no way to know content was dropped. |
 | 5 | **MED** | **500 instead of 400:** Invalid question types, missing criteria, head-limit overflow all return 500 (server error) instead of 400 (client error). |
-| 6 | **MED** | **Noul negation blindness:** Negated questions ("Is it NOT the case that...") don't flip P(true). |
+| 6 | **MED** | **Noul negation sensitivity:** Observed negation failure in tested cases — negated questions ("Is it NOT the case that...") don't reliably flip P(true). Treat negated noul formulations as unsafe until characterised. |
 | 7 | **LOW** | **Score 11-levels accepted:** Documented range is 2–10, but 11 works. Inconsistent with spec. |
-| 8 | **LOW** | **Noul confabulation:** "False from false state" gives P(true)=0.63 instead of ~0. |
+| 8 | **LOW** | **Noul factual/proposition mismatch:** "False from false state" gives P(true)=0.63 instead of ~0. Model weakness on factual mismatch detection. |
 
 ---
 
 ## Recommendations
 
-1. **Fix the batcher** (§3.1): `_process_batch` should merge all payloads into a single ONNX forward pass (pad to max sequence length in the batch), not loop serially. This is the single biggest throughput improvement available.
-2. **Add input validation** before the ONNX call: reject 1-level scores, invalid types, empty criteria with 400 + actionable message.
-3. **Add truncation indicator:** when `input_tokens == max_len` and the original input was longer, include a `"truncated": true` flag in the response.
-4. **Document the score limitation:** until monotonicity is fixed (or the model is retrained), document that `score` produces expected values, not calibrated ordinal rankings.
+1. **~~Fix the batcher~~ DONE:** `_process_batch` now merges all payloads into a single ONNX forward pass via `worker.system_many()`. The ONNX graph's dynamic batch dimension (`['batch', 'seq']`) supports true multi-state coalescing.
+2. **~~Add input validation~~ DONE:** Pre-ONNX validation rejects 1-level scores, 11+ level scores, invalid types, and empty criteria with 400 + actionable message.
+3. **~~Add truncation indicator~~ DONE:** Response now includes `usage.truncated: true` + `usage.original_input_tokens` when state is truncated at max_len.
+4. **Document the score limitation:** Until monotonicity is fixed (or the model is retrained), document that `score` produces expected values, not calibrated ordinal rankings. Use pairwise `choice` for ranking.
 5. **Document the choice degradation zone:** 2–32 options = reliable discrimination; 33–96 = workable but low entropy; 97+ = near-degenerate.
-6. **Fix 500 → 400:** wrap the worker call in try/except and map known validation failures to 400.
+6. **~~Fix 500 → 400~~ DONE:** ValueError and RequestValidationError handlers map known validation failures to 400. Unexpected ONNX/runtime errors remain 500.
 
 ---
 
@@ -295,18 +295,18 @@ The concurrency sweep in §3.2 covers this. Throughput degrades from 0.5 rps (�
 - `noul` for straightforward factual yes/no (direction correct, ~0.1–0.9 range)
 - Single-request inference at ~8ms warm latency
 - Up to ~200 concurrent requests (throughput ~0.3–0.5 rps)
-- 512-token state budget (know what gets truncated)
+- 512-token state budget (truncation now reported via `usage.truncated` + `usage.original_input_tokens`)
+- Batch coalescing now functional — concurrent requests merge into one forward pass
 
 **Use with caution:**
-- `score` for ordinal/ranking decisions (monotonicity not guaranteed)
-- `noul` with negated questions (negation ignored)
+- `score` for ordinal/ranking decisions (monotonicity not guaranteed — use pairwise `choice` instead)
+- `noul` with negated questions (negation sensitivity observed — treat as unsafe until characterised)
 - 33+ choice options (low discrimination)
-- States near 512 tokens (silent truncation)
 
-**Don't rely on:**
-- Batch coalescing for throughput (not functioning)
-- Score as a calibrated ordinal scale
-- High-concurrency throughput (>200 concurrent)
+**Model limitations (not service bugs):**
+- Score monotonicity: model limitation under tested formulations
+- Noul negation: observed failure in tested cases
+- Noul factual/proposition mismatch: model weakness on factual detection
 
 ---
 

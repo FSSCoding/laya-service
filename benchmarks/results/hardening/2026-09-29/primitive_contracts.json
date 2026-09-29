@@ -1,0 +1,640 @@
+{
+  "choice_scaling": {
+    "test": "choice_option_scaling",
+    "results": [
+      {
+        "n_options": 2,
+        "status_code": 200,
+        "input_tokens": 51,
+        "n_options_returned": 2,
+        "max_probability": 0.7361,
+        "entropy_bits": 0.8326,
+        "confidence": 0.1675,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.05,
+          "median": 8.25,
+          "p95": 13.88,
+          "p99": 13.88,
+          "mean": 8.62
+        },
+        "error": null
+      },
+      {
+        "n_options": 4,
+        "status_code": 200,
+        "input_tokens": 67,
+        "n_options_returned": 4,
+        "max_probability": 0.4575,
+        "entropy_bits": 1.7986,
+        "confidence": 0.1007,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.09,
+          "median": 8.22,
+          "p95": 17.09,
+          "p99": 17.09,
+          "mean": 9.05
+        },
+        "error": null
+      },
+      {
+        "n_options": 8,
+        "status_code": 200,
+        "input_tokens": 99,
+        "n_options_returned": 8,
+        "max_probability": 0.6838,
+        "entropy_bits": 1.6765,
+        "confidence": 0.4412,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.15,
+          "median": 8.29,
+          "p95": 17.77,
+          "p99": 17.77,
+          "mean": 9.13
+        },
+        "error": null
+      },
+      {
+        "n_options": 16,
+        "status_code": 200,
+        "input_tokens": 163,
+        "n_options_returned": 16,
+        "max_probability": 1.0,
+        "entropy_bits": -0.0,
+        "confidence": 1.0,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.04,
+          "median": 8.12,
+          "p95": 13.21,
+          "p99": 13.21,
+          "mean": 8.38
+        },
+        "error": null
+      },
+      {
+        "n_options": 24,
+        "status_code": 200,
+        "input_tokens": 203,
+        "n_options_returned": 24,
+        "max_probability": 0.9979,
+        "entropy_bits": 0.0217,
+        "confidence": 0.9952,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.02,
+          "median": 8.08,
+          "p95": 12.43,
+          "p99": 12.43,
+          "mean": 8.33
+        },
+        "error": null
+      },
+      {
+        "n_options": 32,
+        "status_code": 200,
+        "input_tokens": 195,
+        "n_options_returned": 32,
+        "max_probability": 0.6779,
+        "entropy_bits": 1.041,
+        "confidence": 0.7914,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.15,
+          "median": 8.35,
+          "p95": 16.32,
+          "p99": 16.32,
+          "mean": 9.09
+        },
+        "error": null
+      },
+      {
+        "n_options": 48,
+        "status_code": 200,
+        "input_tokens": 225,
+        "n_options_returned": 48,
+        "max_probability": 0.6168,
+        "entropy_bits": 0.9671,
+        "confidence": 0.8267,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.2,
+          "median": 8.32,
+          "p95": 14.75,
+          "p99": 14.75,
+          "mean": 8.65
+        },
+        "error": null
+      },
+      {
+        "n_options": 64,
+        "status_code": 200,
+        "input_tokens": 289,
+        "n_options_returned": 64,
+        "max_probability": 0.9999,
+        "entropy_bits": 0.0001,
+        "confidence": 0.9998,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.21,
+          "median": 8.31,
+          "p95": 14.96,
+          "p99": 14.96,
+          "mean": 8.68
+        },
+        "error": null
+      },
+      {
+        "n_options": 80,
+        "status_code": 200,
+        "input_tokens": 353,
+        "n_options_returned": 80,
+        "max_probability": 0.9984,
+        "entropy_bits": 0.0172,
+        "confidence": 0.9973,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.2,
+          "median": 8.32,
+          "p95": 16.99,
+          "p99": 16.99,
+          "mean": 9.15
+        },
+        "error": null
+      },
+      {
+        "n_options": 96,
+        "status_code": 200,
+        "input_tokens": 417,
+        "n_options_returned": 96,
+        "max_probability": 0.9999,
+        "entropy_bits": 0.0015,
+        "confidence": 0.9998,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.24,
+          "median": 8.4,
+          "p95": 20.83,
+          "p99": 20.83,
+          "mean": 9.37
+        },
+        "error": null
+      },
+      {
+        "n_options": 112,
+        "status_code": 200,
+        "input_tokens": 481,
+        "n_options_returned": 112,
+        "max_probability": 1.0,
+        "entropy_bits": -0.0,
+        "confidence": 1.0,
+        "truncated": false,
+        "latency": {
+          "n": 20,
+          "min": 8.24,
+          "median": 8.35,
+          "p95": 14.19,
+          "p99": 14.19,
+          "mean": 8.68
+        },
+        "error": null
+      },
+      {
+        "n_options": 128,
+        "status_code": 500,
+        "input_tokens": null,
+        "n_options_returned": 0,
+        "max_probability": null,
+        "entropy_bits": null,
+        "confidence": null,
+        "truncated": true,
+        "latency": {
+          "n": 20,
+          "min": 14.38,
+          "median": 15.98,
+          "p95": 23.47,
+          "p99": 23.47,
+          "mean": 16.84
+        },
+        "error": null
+      },
+      {
+        "n_options": 160,
+        "status_code": 500,
+        "input_tokens": null,
+        "n_options_returned": 0,
+        "max_probability": null,
+        "entropy_bits": null,
+        "confidence": null,
+        "truncated": true,
+        "latency": {
+          "n": 20,
+          "min": 15.58,
+          "median": 16.1,
+          "p95": 26.54,
+          "p99": 26.54,
+          "mean": 17.16
+        },
+        "error": null
+      },
+      {
+        "n_options": 192,
+        "status_code": 500,
+        "input_tokens": null,
+        "n_options_returned": 0,
+        "max_probability": null,
+        "entropy_bits": null,
+        "confidence": null,
+        "truncated": true,
+        "latency": {
+          "n": 20,
+          "min": 16.01,
+          "median": 16.51,
+          "p95": 23.89,
+          "p99": 23.89,
+          "mean": 16.92
+        },
+        "error": null
+      },
+      {
+        "n_options": 224,
+        "status_code": 500,
+        "input_tokens": null,
+        "n_options_returned": 0,
+        "max_probability": null,
+        "entropy_bits": null,
+        "confidence": null,
+        "truncated": true,
+        "latency": {
+          "n": 20,
+          "min": 15.94,
+          "median": 16.51,
+          "p95": 25.67,
+          "p99": 25.67,
+          "mean": 17.39
+        },
+        "error": null
+      },
+      {
+        "n_options": 256,
+        "status_code": 500,
+        "input_tokens": null,
+        "n_options_returned": 0,
+        "max_probability": null,
+        "entropy_bits": null,
+        "confidence": null,
+        "truncated": true,
+        "latency": {
+          "n": 20,
+          "min": 16.28,
+          "median": 16.91,
+          "p95": 26.58,
+          "p99": 26.58,
+          "mean": 17.94
+        },
+        "error": null
+      }
+    ]
+  },
+  "choice_ordering": {
+    "test": "choice_ordering_sensitivity",
+    "forward_choice": "opt0",
+    "reversed_choice": "opt0",
+    "same_answer": true
+  },
+  "score_bounds": {
+    "test": "score_level_bounds",
+    "results": [
+      {
+        "n_levels": 1,
+        "status_code": 500,
+        "score_value": null,
+        "latency_ms": 18.89,
+        "error": {
+          "error": {
+            "message": "[ONNXRuntimeError] : 2 : INVALID_ARGUMENT : Non-zero status code returned while running TopK node. Name:'node_topk__1' Status Message: Value of K outside range. K value: 2. Input shape: {1,1} . Axis: 1",
+            "type": "server_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      {
+        "n_levels": 2,
+        "status_code": 200,
+        "score_value": 0.6847,
+        "latency_ms": 35.02,
+        "error": null
+      },
+      {
+        "n_levels": 3,
+        "status_code": 200,
+        "score_value": 0.8151,
+        "latency_ms": 25.82,
+        "error": null
+      },
+      {
+        "n_levels": 4,
+        "status_code": 200,
+        "score_value": 0.7617,
+        "latency_ms": 25.87,
+        "error": null
+      },
+      {
+        "n_levels": 5,
+        "status_code": 200,
+        "score_value": 0.9428,
+        "latency_ms": 27.21,
+        "error": null
+      },
+      {
+        "n_levels": 7,
+        "status_code": 200,
+        "score_value": 1.0961,
+        "latency_ms": 27.73,
+        "error": null
+      },
+      {
+        "n_levels": 10,
+        "status_code": 200,
+        "score_value": 1.4008,
+        "latency_ms": 28.44,
+        "error": null
+      },
+      {
+        "n_levels": 11,
+        "status_code": 200,
+        "score_value": 1.7285,
+        "latency_ms": 41.87,
+        "error": null
+      },
+      {
+        "n_levels": 0,
+        "status_code": 500,
+        "score_value": null,
+        "latency_ms": 23.4,
+        "error": {
+          "error": {
+            "message": "[ONNXRuntimeError] : 1 : FAIL : Non-zero status code returned while running ReduceSum node. Name:'node_sum_1' Status Message: /onnxruntime_src/onnxruntime/core/providers/cuda/reduction/reduction_ops.cc:308 onnxruntime::common::Status onnxruntime::cuda::PrepareForReduce(const onnxruntime::Tensor*, bool, gsl::span<const long int>, PrepareReduceMetadata&, const onnxruntime::TensorShape*) keepdims || input_dims[axis] != 0 was false. Can't reduce on dim with value of 0 if 'keepdims' is false. Invalid output shape would be produced. input_shape:{1,0}\n",
+            "type": "server_error",
+            "param": null,
+            "code": null
+          }
+        }
+      },
+      {
+        "n_levels": -1,
+        "status_code": 500,
+        "score_value": null,
+        "latency_ms": 19.72,
+        "error": {
+          "error": {
+            "message": "[ONNXRuntimeError] : 1 : FAIL : Non-zero status code returned while running ReduceSum node. Name:'node_sum_1' Status Message: /onnxruntime_src/onnxruntime/core/providers/cuda/reduction/reduction_ops.cc:308 onnxruntime::common::Status onnxruntime::cuda::PrepareForReduce(const onnxruntime::Tensor*, bool, gsl::span<const long int>, PrepareReduceMetadata&, const onnxruntime::TensorShape*) keepdims || input_dims[axis] != 0 was false. Can't reduce on dim with value of 0 if 'keepdims' is false. Invalid output shape would be produced. input_shape:{1,0}\n",
+            "type": "server_error",
+            "param": null,
+            "code": null
+          }
+        }
+      }
+    ]
+  },
+  "score_ladder": {
+    "test": "score_monotonic_ladder",
+    "results": {
+      "3": {
+        "scores": [
+          {
+            "label": "routine FYI",
+            "score": 0.4071,
+            "confidence": 0.3437
+          },
+          {
+            "label": "no deadline",
+            "score": 0.8399,
+            "confidence": 0.1005
+          },
+          {
+            "label": "deadline next week",
+            "score": 0.9591,
+            "confidence": 0.5555
+          },
+          {
+            "label": "deadline today",
+            "score": 0.9777,
+            "confidence": 0.738
+          },
+          {
+            "label": "service degraded",
+            "score": 1.2265,
+            "confidence": 0.2357
+          },
+          {
+            "label": "safety-critical",
+            "score": 1.1265,
+            "confidence": 0.1918
+          }
+        ],
+        "monotonic": false
+      },
+      "5": {
+        "scores": [
+          {
+            "label": "routine FYI",
+            "score": 0.6373,
+            "confidence": 0.4612
+          },
+          {
+            "label": "no deadline",
+            "score": 0.7808,
+            "confidence": 0.3254
+          },
+          {
+            "label": "deadline next week",
+            "score": 1.0134,
+            "confidence": 0.5595
+          },
+          {
+            "label": "deadline today",
+            "score": 1.0002,
+            "confidence": 0.7427
+          },
+          {
+            "label": "service degraded",
+            "score": 1.2224,
+            "confidence": 0.3671
+          },
+          {
+            "label": "safety-critical",
+            "score": 1.0365,
+            "confidence": 0.3392
+          }
+        ],
+        "monotonic": false
+      },
+      "7": {
+        "scores": [
+          {
+            "label": "routine FYI",
+            "score": 0.7606,
+            "confidence": 0.4286
+          },
+          {
+            "label": "no deadline",
+            "score": 0.9702,
+            "confidence": 0.3288
+          },
+          {
+            "label": "deadline next week",
+            "score": 1.1711,
+            "confidence": 0.5217
+          },
+          {
+            "label": "deadline today",
+            "score": 1.0448,
+            "confidence": 0.7591
+          },
+          {
+            "label": "service degraded",
+            "score": 1.3164,
+            "confidence": 0.4137
+          },
+          {
+            "label": "safety-critical",
+            "score": 1.2499,
+            "confidence": 0.3344
+          }
+        ],
+        "monotonic": false
+      },
+      "10": {
+        "scores": [
+          {
+            "label": "routine FYI",
+            "score": 2.0923,
+            "confidence": 0.217
+          },
+          {
+            "label": "no deadline",
+            "score": 2.0532,
+            "confidence": 0.1932
+          },
+          {
+            "label": "deadline next week",
+            "score": 1.6891,
+            "confidence": 0.4315
+          },
+          {
+            "label": "deadline today",
+            "score": 1.2835,
+            "confidence": 0.6516
+          },
+          {
+            "label": "service degraded",
+            "score": 2.6634,
+            "confidence": 0.2235
+          },
+          {
+            "label": "safety-critical",
+            "score": 2.4542,
+            "confidence": 0.227
+          }
+        ],
+        "monotonic": false
+      }
+    }
+  },
+  "noul_mechanical": {
+    "test": "noul_mechanical",
+    "results": [
+      {
+        "label": "true_prop",
+        "status_code": 200,
+        "p_true": 0.8584,
+        "latency_ms": 28.59,
+        "error": null
+      },
+      {
+        "label": "false_prop",
+        "status_code": 200,
+        "p_true": 0.1292,
+        "latency_ms": 27.23,
+        "error": null
+      },
+      {
+        "label": "true_from_false_state",
+        "status_code": 200,
+        "p_true": 0.8416,
+        "latency_ms": 26.46,
+        "error": null
+      },
+      {
+        "label": "false_from_false_state",
+        "status_code": 200,
+        "p_true": 0.6336,
+        "latency_ms": 26.21,
+        "error": null
+      },
+      {
+        "label": "negated_true",
+        "status_code": 200,
+        "p_true": 0.6768,
+        "latency_ms": 26.84,
+        "error": null
+      },
+      {
+        "label": "negated_false",
+        "status_code": 200,
+        "p_true": 0.7907,
+        "latency_ms": 27.42,
+        "error": null
+      },
+      {
+        "label": "missing_evidence",
+        "status_code": 200,
+        "p_true": 0.1839,
+        "latency_ms": 25.63,
+        "error": null
+      },
+      {
+        "label": "contradictory",
+        "status_code": 200,
+        "p_true": 0.2789,
+        "latency_ms": 26.84,
+        "error": null
+      },
+      {
+        "label": "empty_state",
+        "status_code": 200,
+        "p_true": 0.1604,
+        "latency_ms": 27.02,
+        "error": null
+      },
+      {
+        "label": "unicode_state",
+        "status_code": 200,
+        "p_true": 0.7861,
+        "latency_ms": 26.76,
+        "error": null
+      },
+      {
+        "label": "structured_json",
+        "status_code": 200,
+        "p_true": 0.8927,
+        "latency_ms": 28.02,
+        "error": null
+      }
+    ]
+  }
+}

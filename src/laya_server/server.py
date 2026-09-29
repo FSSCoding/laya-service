@@ -21,6 +21,7 @@ from typing import Any, Dict
 
 import uvicorn
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -224,6 +225,38 @@ def create_app(cfg: AppConfig) -> FastAPI:
         st.worker = None
         logger.info("Model unloaded from GPU (manual)")
         return {"status": "unloaded", "gpu_freed_mb": 2400}
+
+    @app.exception_handler(ValueError)
+    async def validation_error_handler(request: Request, exc: ValueError):
+        """Client-caused validation failures → 400."""
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "message": str(exc),
+                    "type": "validation_error",
+                    "param": None,
+                    "code": "invalid_request",
+                }
+            },
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def request_validation_error_handler(request: Request, exc: RequestValidationError):
+        """Pydantic validation failures → 400."""
+        return JSONResponse(
+            status_code=400,
+            content={
+                "error": {
+                    "message": (
+                        exc.errors()[0].get("msg") if exc.errors() else None
+                    ) or "invalid request",
+                    "type": "validation_error",
+                    "param": None,
+                    "code": "invalid_request",
+                }
+            },
+        )
 
     @app.exception_handler(Exception)
     async def unhandled_exception_handler(request: Request, exc: Exception):

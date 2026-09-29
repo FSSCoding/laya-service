@@ -51,10 +51,15 @@ def initialize_state(app: FastAPI, cfg: AppConfig, create_worker: bool = True) -
         )
 
     # Batcher — needs a process function that reads the worker from app.state
+    def _on_coalesce(n: int) -> None:
+        st.stats["batch_coalesced"] += n
+
     st.batcher = RequestBatcher(
         max_batch_size=cfg.batcher.max_batch_size,
         max_wait_ms=cfg.batcher.max_wait_ms,
         worker=_make_process_fn(app),
+        worker_many=_make_process_many_fn(app),
+        on_coalesce=_on_coalesce,
     )
 
     # Stats
@@ -79,3 +84,15 @@ def _make_process_fn(app: FastAPI):
         return w.system_one(payload["state"], payload["questions"])
 
     return _process
+
+
+def _make_process_many_fn(app: FastAPI):
+    """Return a sync callable that processes multiple payloads in one forward pass."""
+
+    def _process_many(pairs: list) -> list:
+        w = app.state.worker
+        if w is None:
+            raise RuntimeError("Model not loaded")
+        return w.system_many(pairs)
+
+    return _process_many

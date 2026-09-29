@@ -7,8 +7,6 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-import pytest
-
 from laya_server.primitives import (
     BatchResult,
     ChoiceResult,

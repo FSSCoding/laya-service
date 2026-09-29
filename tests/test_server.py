@@ -49,11 +49,11 @@ class TestSystemOne:
 
     def test_system_one_rejects_empty_questions(self, client):
         resp = client.post("/system_one", json={"state": STATE, "questions": {}})
-        assert resp.status_code == 422
+        assert resp.status_code == 400
 
     def test_system_one_rejects_missing_state(self, client):
         resp = client.post("/system_one", json={"questions": QUESTIONS})
-        assert resp.status_code == 422
+        assert resp.status_code == 400
 
     def test_system_one_mock_worker_called(self, mock_app, client):
         client.post("/system_one", json={"state": STATE, "questions": QUESTIONS})

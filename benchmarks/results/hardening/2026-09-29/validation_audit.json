@@ -1,0 +1,186 @@
+{
+  "validation": {
+    "test": "input_validation",
+    "results": [
+      {
+        "label": "valid_minimal",
+        "status": 200,
+        "expected": "200",
+        "detail": "answers=['q']"
+      },
+      {
+        "label": "missing_state_key",
+        "status": 422,
+        "expected": "4xx",
+        "detail": [
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "state"
+            ],
+            "msg": "Field required",
+            "input": {
+              "questions": {
+                "q": {
+                  "type": "noul",
+                  "instructions": "x"
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "label": "missing_questions_key",
+        "status": 422,
+        "expected": "4xx",
+        "detail": [
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "questions"
+            ],
+            "msg": "Field required",
+            "input": {
+              "state": {
+                "subject": "s",
+                "body": "b"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "label": "state_not_dict",
+        "status": 200,
+        "expected": "4xx or 200",
+        "detail": "answers=['q']"
+      },
+      {
+        "label": "questions_not_dict",
+        "status": 422,
+        "expected": "4xx",
+        "detail": [
+          {
+            "type": "dict_type",
+            "loc": [
+              "body",
+              "questions"
+            ],
+            "msg": "Input should be a valid dictionary",
+            "input": "string"
+          }
+        ]
+      },
+      {
+        "label": "empty_questions",
+        "status": 422,
+        "expected": "4xx or 200",
+        "detail": [
+          {
+            "type": "too_short",
+            "loc": [
+              "body",
+              "questions"
+            ],
+            "msg": "Dictionary should have at least 1 item after validation, not 0",
+            "input": {},
+            "ctx": {
+              "field_type": "Dictionary",
+              "min_length": 1,
+              "actual_length": 0
+            }
+          }
+        ]
+      },
+      {
+        "label": "invalid_type",
+        "status": 500,
+        "expected": "4xx",
+        "detail": ""
+      },
+      {
+        "label": "choice_no_criteria",
+        "status": 500,
+        "expected": "4xx",
+        "detail": ""
+      },
+      {
+        "label": "choice_empty_criteria",
+        "status": 500,
+        "expected": "4xx",
+        "detail": ""
+      },
+      {
+        "label": "score_no_criteria",
+        "status": 500,
+        "expected": "4xx",
+        "detail": ""
+      },
+      {
+        "label": "score_empty_criteria",
+        "status": 500,
+        "expected": "4xx",
+        "detail": ""
+      },
+      {
+        "label": "noul_no_instructions",
+        "status": 200,
+        "expected": "4xx or 200",
+        "detail": "answers=['q']"
+      },
+      {
+        "label": "unicode_in_state",
+        "status": 200,
+        "expected": "200",
+        "detail": "answers=['q']"
+      },
+      {
+        "label": "very_long_instruction",
+        "status": 200,
+        "expected": "200 or truncated",
+        "detail": "answers=['q']"
+      },
+      {
+        "label": "duplicate_qids",
+        "status": 500,
+        "expected": "last wins or error",
+        "detail": ""
+      }
+    ]
+  },
+  "response_shape": {
+    "test": "response_shape",
+    "results": {
+      "choice_fields": [
+        "choice",
+        "confidence",
+        "probabilities",
+        "rl_agent",
+        "type"
+      ],
+      "score_fields": [
+        "confidence",
+        "legend",
+        "probabilities",
+        "rl_agent",
+        "score",
+        "type"
+      ],
+      "noul_fields": [
+        "noul",
+        "rl_agent",
+        "type"
+      ],
+      "mixed_keys": [
+        "c",
+        "n",
+        "s"
+      ],
+      "usage_present": true,
+      "cached_present": true
+    }
+  }
+}

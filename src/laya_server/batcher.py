@@ -21,11 +21,16 @@ logger = logging.getLogger("laya-service.batcher")
 
 class RequestBatcher:
     def __init__(
-        self, max_batch_size: int = 512, max_wait_ms: float = 5.0, worker: Optional[Callable] = None
+        self, max_batch_size: int = 512, max_wait_ms: float = 5.0,
+        worker: Optional[Callable] = None,
+        worker_many: Optional[Callable] = None,
+        on_coalesce: Optional[Callable] = None,
     ):
         self.max_batch_size = max_batch_size
         self.max_wait_ms = max_wait_ms
         self._worker_fn = worker
+        self._worker_fn_many = worker_many
+        self._on_coalesce = on_coalesce  # called with batch_size when coalescing happens
         self._queue: Optional[asyncio.Queue] = None
         self._task: Optional[asyncio.Task] = None
 
@@ -68,10 +73,19 @@ class RequestBatcher:
             # free.
             if len(batch) > 1:
                 logger.debug(f"Coalesced {len(batch)} requests into one GPU call")
+                if self._on_coalesce:
+                    self._on_coalesce(len(batch))
             try:
-                results = await loop.run_in_executor(
-                    None, self._process_batch, [p for p, _ in batch]
-                )
+                if self._worker_fn_many is not None and len(batch) > 1:
+                    # Real coalescing: merge all payloads into one forward pass.
+                    pairs = [(p["state"], p["questions"]) for p, _ in batch]
+                    results = await loop.run_in_executor(
+                        None, self._worker_fn_many, pairs
+                    )
+                else:
+                    results = await loop.run_in_executor(
+                        None, self._process_batch, [p for p, _ in batch]
+                    )
                 for (payload, future), res in zip(batch, results):
                     if not future.done():
                         future.set_result(res)
