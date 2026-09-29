@@ -1,0 +1,49 @@
+{
+  "version": "v1-smoke",
+  "date": "2026-09-29",
+  "split_seed": 42,
+  "counts": {
+    "total": 33,
+    "dev": 20,
+    "lock": 13,
+    "by_family": {
+      "noul/factual": 1,
+      "noul/ambiguous": 1,
+      "noul/adversarial": 1,
+      "noul/symmetry": 2,
+      "choice/2-option": 1,
+      "choice/multiclass": 2,
+      "choice/overlapping": 1,
+      "choice/stress": 1,
+      "score/3-level": 1,
+      "score/4-level": 1,
+      "score/7-level": 1,
+      "score/10-level": 1,
+      "multi_select/disjoint": 1,
+      "multi_select/overlapping": 1,
+      "multi_select/none": 1,
+      "rank/3-item": 1,
+      "rank/5-item": 1,
+      "rank/near-tie": 1,
+      "state/long": 1,
+      "state/short": 1,
+      "state/noisy": 1,
+      "consistency/option-reorder": 2,
+      "consistency/irrelevant-text": 2,
+      "inversion/choice-vs-noul": 4,
+      "ood/nonsense": 1,
+      "ood/wrong-domain": 1
+    },
+    "by_tier": {
+      "deterministic": 16,
+      "objective": 13,
+      "subjective": 4
+    },
+    "by_difficulty": {
+      "easy": 15,
+      "medium": 10,
+      "hard": 8
+    }
+  },
+  "provenance_notes": "Smoke corpus for Phase A validation. Covers all metric paths (choice/noul/score/multi_select/rank), consistency variants, inversion pairs, state-shape probes, and OOD cases. Not exhaustive — full v1 corpus (~300 cases) is Phase B."
+}

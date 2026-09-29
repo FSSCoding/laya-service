@@ -249,6 +249,29 @@ and isn't the goal.
   override its path.
 - **Virtual environment:** Use the project `.venv`; do not install dependencies globally.
 - **Service deployment:** Unit source is under `systemd/`; installed as a system unit on bobai.
+- **Adoption gate:** No operational Laya decision is adopted solely from general benchmark
+  performance. Each production decision requires a representative domain-specific evaluation
+  slice with pre-agreed acceptance criteria.
+
+## Evaluation & benchmarking
+
+**Current mission (Phase 3.5): Service Hardening & Operating Envelope.** Characterise and harden
+the three native primitives (`choice`, `score`, `noul`), plus batching, coalescing, token limits,
+concurrency, and error handling. Establish the mechanical operating envelope before operational use.
+
+- Spec: `benchmarks/SPEC-HARDENING.md`
+- Harness: `benchmarks/harness/` (runner, metrics, systems, report)
+- Smoke corpus: `benchmarks/v1/cases.jsonl` (33 cases, frozen regression baseline)
+- Deferred research: `benchmarks/FUTURE-METHODS.md` (300-case semantic corpus, inversion pairs,
+  consistency perturbation suite, OOD taxonomy, 27B reference comparison — preserved but not
+  current build requirements)
+
+**What is NOT the current mission:** large-scale semantic evaluation, inversion experiments,
+consistency perturbation suites, OOD taxonomies. Those are deferred. The immediate goal is to
+know the operating limits, failure behaviour, and safe usage envelope of the actual primitives.
+
+**After hardening:** Stop. Use it. Run actual inferencing. Form intuition through interaction.
+Domain-specific adoption slices only when real use cases emerge.
 
 ## Documentation map
 
@@ -256,13 +279,17 @@ and isn't the goal.
 |------|---------|
 | `README.md` | Overview, quick start, API, and resource footprint |
 | `SERVICE.md` | Components, API contract, data flow, tuning |
-| `ROADMAP.md` | Planned work |
+| `ROADMAP.md` | Planned work (Phase 3.5 = Service Hardening & Operating Envelope is current) |
 | `CHANGELOG.md` | Dated change history |
 | `QWEN.md` | This agent context (architecture, paths, environment, ops, conventions) |
 | `pyproject.toml` | Package metadata, dependencies, console entry point, test/lint configuration |
 | `tests/` | Pytest suite (parity, server contract, integration, CLI, primitives, config, version) + shared fixtures |
 | `systemd/` | systemd unit and restart timer source |
-| `bench.py` | Standalone benchmark script |
+| `bench.py` | Standalone benchmark script (CPU vs GPU latency) |
+| `benchmarks/` | Evaluation harness: smoke corpus, quality metrics, systems benchmark, hardening spec |
+| `benchmarks/SPEC-HARDENING.md` | Current mission: service hardening & operating envelope |
+| `benchmarks/FUTURE-METHODS.md` | Deferred: large-scale semantic evaluation methodology |
+| `benchmarks/README.md` | How to run the harness, adoption-gate policy |
 
 ## Runtime state and footprint
 

@@ -6,7 +6,7 @@ can continue without re-deriving context.
 
 ---
 
-## Current state (2026-09-28)
+## Current state (2026-09-29)
 
 The **service** is built, verified, deployed, and pushed:
 - GPU (CUDA) ONNX inference over HTTP on **:11448**, ~20× faster than CPU, decision-identical to
@@ -19,10 +19,15 @@ The **service** is built, verified, deployed, and pushed:
 - `laya` CLI in the venv (`.venv/bin/laya`) — sole owner of systemd lifecycle; JS MCP server at
   `~/.qwen/mcp-servers/laya.js`.
 - **Repo pushed** to Gitea: `https://gitea.bobai.com.au/foxadmin/laya-service.git`.
-- Docs: README, LINK, SERVICE, INSTALL, CHANGELOG, ROADMAP. Parity + bench tests in-tree.
+- **Typed primitives** (v0.3.0): `laya_choice`/`laya_score`/`laya_noul`/`laya_batch` +
+  composed helpers (`classify`, `multi_select`, `rank`), CLI verbs, experimental routing signal.
+- **Benchmark harness** (Phase A complete): smoke corpus (33 cases), quality metrics with
+  validity guards, systems benchmark, provenance capture, end-to-end pipeline proven.
+  Correctness pass done (noul false-label bug fixed, metric applicability guards added,
+  routing-head validity gating, smoke report labelling).
 
-What is **not** done yet: the typed interface primitives (Phase 3) and remote deployment / ops
-hardening (Phase 4).
+What is **not** done yet: service hardening & operating envelope (Phase 3.5) and remote
+deployment / ops hardening (Phase 4).
 
 ---
 
@@ -89,6 +94,33 @@ Remaining / not yet:
 - [ ] **Node.js client** — the lib at `../laya` is Node; a thin HTTP client there would let
       both ecosystems share the same GPU service.
 
+## Phase 3.5 — Service Hardening & Operating Envelope (CURRENT)
+
+Characterise and harden the three native primitives (`choice`, `score`, `noul`), plus batching,
+coalescing, token limits, concurrency, and error handling. Establish the mechanical operating
+envelope before operational use. Spec: `benchmarks/SPEC-HARDENING.md`.
+
+- [ ] **Primitive contract testing** — option-count scaling (2→64+), score-level bounds (1→11),
+      noul mechanical semantics, controlled monotonic ladders.
+- [ ] **Batching & coalescing** — 5 ms window behaviour, batch saturation (1→512→513+),
+      heterogeneous batches, queueing between adjacent batches.
+- [ ] **Token & truncation limits** — state-length sweep (50→600 tokens), combined budget
+      (state × question complexity), truncation behaviour, error handling at limits.
+- [ ] **Systems & operational** — latency distributions, cold/warm paths, cache behaviour,
+      VRAM/RAM, concurrency sweep, error recovery.
+- [ ] **Validation & error-handling audit** — does the service reject invalid requests cleanly
+      with actionable errors? Document the safe operating envelope table.
+- [ ] **Small semantic probe set** — retain 30–60 cases for regression (smoke corpus exists).
+- [ ] **Hardening report** — safe operating envelope, scaling curves, failure modes.
+
+**Exit criteria:** The native primitives have known input limits, scaling behaviour, performance
+curves, failure modes, validation behaviour and concurrency characteristics; a small semantic
+smoke baseline exists; future evaluation methodologies are documented and deferred.
+
+**Deferred research** (preserved in `benchmarks/FUTURE-METHODS.md`, not current build):
+large-scale semantic corpus (~300 cases), inversion pairs, consistency perturbation suite,
+OOD taxonomy, domain-specific adoption slices, 27B reference comparison.
+
 ## Phase 4 — deployment / multi-machine
 
 - [ ] **Move to a dedicated inference server** (the user may do this): the CLI's `LAYA_ENDPOINT`
@@ -146,3 +178,7 @@ so coordinate a maintenance window first.
   the service.
 - **Lean & reliable** is the bar (per the embed-server template): small dep surface, one process,
   obvious failure modes, cheap when idle.
+- **Adoption gate.** No operational Laya decision is adopted solely from general benchmark
+  performance. Each production decision requires a representative domain-specific evaluation
+  slice with pre-agreed acceptance criteria. General hardening first; domain slice before
+  adoption; real-world monitoring afterwards.
