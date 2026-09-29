@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Tuple
 
 from .client import resolve_endpoint, system_one
 
-
 # ---------------------------------------------------------------------------
 # Result dataclasses
 # ---------------------------------------------------------------------------

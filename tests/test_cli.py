@@ -258,7 +258,8 @@ class TestBatchCommand:
             result = CliRunner().invoke(cli, [
                 "batch",
                 "--state", '{"x":1}',
-                "--questions", '{"c":{"type":"choice","instructions":"pick","criteria":{"A":null,"B":null}},"n":{"type":"noul","instructions":"?"}}',
+                "--questions", '{"c":{"type":"choice","instructions":"pick",'
+                '"criteria":{"A":null,"B":null}},"n":{"type":"noul","instructions":"?"}}',
                 "--json",
             ])
             assert result.exit_code == 0

@@ -183,7 +183,9 @@ def query(state_val: str, questions_val: str, as_json: bool, endpoint: str | Non
 )
 @click.option("--json", "as_json", is_flag=True, default=False, help="Raw JSON output")
 @click.option("--endpoint", default=None, help="Service endpoint URL")
-def choice(state_val: str, instructions: str, options_val: str, as_json: bool, endpoint: str | None):
+def choice(
+    state_val: str, instructions: str, options_val: str, as_json: bool, endpoint: str | None,
+):
     """Typed choice: pick one option."""
     from .primitives import laya_choice
 

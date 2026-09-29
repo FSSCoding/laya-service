@@ -290,6 +290,7 @@ Domain-specific adoption slices only when real use cases emerge.
 | `benchmarks/SPEC-HARDENING.md` | Current mission: service hardening & operating envelope |
 | `benchmarks/FUTURE-METHODS.md` | Deferred: large-scale semantic evaluation methodology |
 | `benchmarks/README.md` | How to run the harness, adoption-gate policy |
+| `MODEL-DOCTRINE.md` | Operating doctrine: mental model, safe-usage rules per primitive, question-formulation checklist |
 
 ## Runtime state and footprint
 
