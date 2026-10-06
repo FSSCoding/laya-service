@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class GPUProvider(BaseModel):
@@ -49,7 +49,9 @@ class IdleConfig(BaseModel):
 
 
 class AppConfig(BaseModel):
-    model_dir: str = "/MASTERFOLDER/Services/laya/onnx"
+    model_config = ConfigDict(validate_default=True)
+
+    model_dir: str | None = None
     host: str = "0.0.0.0"
     port: int = Field(default=11448, ge=1, le=65535)
     gpu: GPUConfig = Field(default_factory=GPUConfig)
@@ -59,7 +61,13 @@ class AppConfig(BaseModel):
 
     @field_validator("model_dir")
     @classmethod
-    def model_dir_exists(cls, v: str) -> str:
+    def model_dir_exists(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            raise ValueError(
+                "model_dir is required. Set it in your config file to the path of a "
+                "directory containing the Laya ONNX bundle (laya.onnx, laya.onnx.data, "
+                "laya_config.json, tokenizer/). See config/laya_config.example.json."
+            )
         p = Path(v).expanduser()
         if not p.is_dir():
             raise ValueError(f"model_dir does not exist: {p}")
@@ -78,8 +86,9 @@ def resolve_config_path() -> Path:
     if cwd_config.is_file():
         return cwd_config
     raise FileNotFoundError(
-        "No config found. Set LAYA_CONFIG_PATH or ensure "
-        "config/laya_config.json exists relative to CWD."
+        "No config found. Copy config/laya_config.example.json to "
+        "config/laya_config.json (or point LAYA_CONFIG_PATH at a config file) "
+        "and set its model_dir to your Laya ONNX bundle."
     )
 
 

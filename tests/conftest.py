@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 from fixtures import QUESTIONS, STATE  # noqa: F401 — re-exported for test modules
 
-MODEL_DIR = os.environ.get("LAYA_MODEL_DIR", "/MASTERFOLDER/Services/laya/onnx")
+MODEL_DIR = os.environ.get("LAYA_MODEL_DIR", "./onnx")
 
 
 @pytest.fixture(scope="module")

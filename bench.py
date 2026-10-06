@@ -9,13 +9,17 @@ Measures:
     list of payloads) — the realistic "traffic burst" number
   * a heavy single request (many questions) to show per-token scaling
 
-Run with CUDA on the pinned card:
-  CUDA_VISIBLE_DEVICES=0 \\
-  LD_LIBRARY_PATH=/usr/local/lib/ollama/cuda_v13 ... \\
-  .venv/bin/python bench.py
+The model bundle path is taken from the LAYA_MODEL_DIR environment variable.
+
+Run (set LAYA_MODEL_DIR to your ONNX bundle; point LD_LIBRARY_PATH at your CUDA 13 libs):
+  LAYA_MODEL_DIR=/path/to/laya/onnx \\
+  CUDA_VISIBLE_DEVICES=<your card> \\
+  LD_LIBRARY_PATH=/path/to/cublas-13-libs:/usr/lib/x86_64-linux-gnu \\
+  python bench.py
 """
 from __future__ import annotations
 
+import os
 import statistics
 import sys
 import time
@@ -27,7 +31,7 @@ from fixtures import QUESTIONS, STATE  # noqa: E402
 
 from laya_server.worker import LayaWorker  # noqa: E402
 
-MODEL_DIR = "/MASTERFOLDER/Services/laya/onnx"
+MODEL_DIR = os.environ.get("LAYA_MODEL_DIR", "./onnx")
 
 
 def build_questions(n: int) -> dict:

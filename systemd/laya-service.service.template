@@ -1,0 +1,53 @@
+# Laya GPU Inference Service — systemd unit TEMPLATE
+#
+# Copy this file to /etc/systemd/system/laya-service.service and edit the
+# five __CONFIGURATION__ lines (marked below) for your machine, then run:
+#
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now laya-service.service
+#
+# A matching weekly restart timer is provided in laya-service-restart.timer.
+#
+# --- CONFIGURATION POINTS (edit these five lines) ---
+#   __SERVICE_USER__     : user that runs the service (must be able to read model_dir)
+#   __INSTALL_DIR__      : absolute path to the laya-service checkout
+#   __GPU_CARD__         : 0-based NVIDIA card index to pin (see CUDA_VISIBLE_DEVICES)
+#   __CUDA_LIB_PATH__    : directory holding cuBLAS/cuBLAS-Lt/cuDNN shared libs
+#   __MODEL_CONFIG__     : (optional) path to your config; defaults to $INSTALL_DIR/config/laya_config.json
+
+[Unit]
+Description=Laya GPU Inference Service (onnxruntime-gpu over HTTP)
+After=network.target
+
+[Service]
+Type=simple
+User=__SERVICE_USER__
+WorkingDirectory=__INSTALL_DIR__
+
+# Pin the GPU and make the CUDA 13 libraries discoverable.
+# onnxruntime-gpu >= 1.30 is built against CUDA 13; if its cuBLAS/cuBLAS-Lt are not on the
+# default loader path the CUDA execution provider silently falls back to CPU. Find yours with:
+#   ldconfig -p | grep -i cublasLt
+Environment="CUDA_VISIBLE_DEVICES=__GPU_CARD__"
+Environment="LD_LIBRARY_PATH=__CUDA_LIB_PATH__:/usr/lib/x86_64-linux-gnu"
+
+# Point the server at your config file (set model_dir in it).
+Environment="LAYA_CONFIG_PATH=__INSTALL_DIR__/config/laya_config.json"
+
+# Thread caps for a small single-card model (avoid oversubscription).
+Environment="OMP_NUM_THREADS=2"
+Environment="MKL_NUM_THREADS=2"
+Environment="TOKENIZERS_PARALLELISM=false"
+
+ExecStart=__INSTALL_DIR__/.venv/bin/laya-server
+
+Restart=on-failure
+RestartSec=5
+
+# Resource caps (a single worker loads one ~2.3 GB ONNX session).
+MemoryMax=8G
+CPUQuota=300%
+Nice=-5
+
+[Install]
+WantedBy=multi-user.target

@@ -75,13 +75,16 @@ class TestCreateAppIsolation:
         from laya_server._config import AppConfig
         from laya_server.server import create_app
 
+        model_dir = str(tmp_path / "model")
+        (tmp_path / "model").mkdir()
+
         cfg1 = AppConfig(
-            model_dir="/MASTERFOLDER/Services/laya/onnx",
+            model_dir=model_dir,
             port=11448,
             host="0.0.0.0",
         )
         cfg2 = AppConfig(
-            model_dir="/MASTERFOLDER/Services/laya/onnx",
+            model_dir=model_dir,
             port=9999,
             host="127.0.0.1",
         )
@@ -90,11 +93,20 @@ class TestCreateAppIsolation:
         assert app1 is not app2
         assert len(app1.routes) == len(app2.routes)
 
-    def test_version_in_app_metadata(self):
+    def test_version_in_app_metadata(self, tmp_path):
         from laya_server import __version__
         from laya_server._config import AppConfig
         from laya_server.server import create_app
 
-        cfg = AppConfig(model_dir="/MASTERFOLDER/Services/laya/onnx")
+        (tmp_path / "model").mkdir()
+        cfg = AppConfig(model_dir=str(tmp_path / "model"))
         app = create_app(cfg)
         assert app.version == __version__
+
+    def test_missing_model_dir_raises(self):
+        with pytest.raises(Exception, match="model_dir is required"):
+            AppConfig()
+
+    def test_invalid_model_dir_raises(self, tmp_path):
+        with pytest.raises(Exception, match="model_dir does not exist"):
+            AppConfig(model_dir=str(tmp_path / "does-not-exist"))
