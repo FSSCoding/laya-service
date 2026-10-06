@@ -20,6 +20,14 @@ onnx/
 *.onnx
 *.onnx.data
 
+# Benchmark outputs (generated; canonical snapshot lives in benchmarks/baseline/)
+benchmarks/results/
+
+# Agent / tooling runtime scratch
+.pb-context
+.qwen/
+.ruff_cache/
+
 # Editor / OS
 .DS_Store
 .idea/
