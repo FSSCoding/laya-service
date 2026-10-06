@@ -15,12 +15,12 @@ The service layer is proven (fast, stable, parity-checked). This harness proves 
 ## Quick start
 
 ```bash
+# from the repository root, with the venv activated:
 # 1. Run the smoke corpus against the live service
-cd /MASTERFOLDER/Services/laya-service
-.venv/bin/python -m benchmarks.harness.runner benchmarks/v1/cases.jsonl
+python -m benchmarks.harness.runner benchmarks/v1/cases.jsonl
 
 # 2. Compute metrics
-.venv/bin/python -m benchmarks.harness.metrics results/<date>-raw.jsonl benchmarks/v1/cases.jsonl
+python -m benchmarks.harness.metrics results/<date>-raw.jsonl benchmarks/v1/cases.jsonl
 
 # 3. Generate report
 .venv/bin/python -m benchmarks.harness.report results/<date>-metrics.json

@@ -310,4 +310,4 @@ The concurrency sweep in ยง3.2 covers this. Throughput degrades from 0.5 rps (โ
 
 ---
 
-*Generated from raw data in `benchmarks/results/hardening/2026-09-29/`. All measurements taken against the live CUDA service on bobai (card 1).*
+*Generated from raw data in the hardening run (2026-09-29). All measurements taken against the live CUDA service.*

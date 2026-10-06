@@ -1,7 +1,46 @@
 # Changelog
 
-All notable changes to the Laya GPU Inference Service. Dates are absolute (UTC, bobai).
-Format follows the embed-server changelog convention.
+All notable changes to the Laya GPU Inference Service. Dates are absolute (UTC).
+
+---
+
+## [Unreleased] — 2026-09-30 (public-release preparation)
+
+### Added
+- **`LICENSE`** (Apache-2.0) and **`NOTICE`** (Convai Innovations weights + Receptron MIT
+  attribution).
+- **`config/laya_config.example.json`** — neutral defaults; `model_dir` is now a required
+  field (no machine-specific default).
+- **`systemd/laya-service.service.template`** — generic unit with five explicit
+  configuration points (user, install dir, GPU card, CUDA lib path, config path).
+- **`docs/`** — INSTALL, ARCHITECTURE, MODEL-DOCTRINE, ROADMAP moved here and sanitised;
+  new `docs/research/` (Windows/macOS feasibility, Jev compatibility scope).
+- **`examples/probes/`** — characterisation probes (formerly `campaign/`), snake_case.
+- **`benchmarks/baseline/`** — one canonical measured snapshot (report, metrics,
+  safe-operating-envelope); `benchmarks/results/` is now gitignored.
+- FSS logo (`playground/static/fox-logo.png`) + restrained playground footer credit.
+
+### Changed
+- **`README.md`** rewritten as a stranger-facing entry point (no machine-specific paths).
+- **`QWEN.md`** rewritten as a general agent-operating context (no host/IP/card/Gitea specifics).
+- **`_config.py`** — `model_dir` required and validated (`validate_default`); clear error
+  when missing or invalid.
+- **`sequence.py`** — provenance attribution + module-level `math`.
+- **`server.py`** — `/control/unload` no longer returns a fabricated VRAM figure.
+- **`bench.py` / `tests/conftest.py`** — `MODEL_DIR` env-overridable (`LAYA_MODEL_DIR`).
+- **`playground/server.py`** — `--upstream` flag (loopback-validated).
+- **`pyproject.toml`** — license, authors, readme, classifiers, repository URL;
+  `pytest-timeout` added to dev extras.
+
+### Removed
+- Machine-specific live config and live systemd unit (replaced by generic versions).
+- Internal incident postmortem and exploratory benchmark runs (superseded by `baseline/`).
+
+### Fixed
+- `tests/test_config.py` — hardcoded paths replaced with `tmp_path`; added missing/invalid
+  `model_dir` tests.
+- `benchmarks/hardening/validation_audit.py` — removed the structurally-impossible
+  duplicate-QID probe.
 
 ---
 
@@ -41,7 +80,7 @@ Format follows the embed-server changelog convention.
 
 ---
 
-## [0.2.0] — 2026-09-28 (next pass: client, CLI, MCP, tests)
+## [0.2.0] — 2026-09-28 (next pass: client, CLI, tests)
 
 ### Added
 - **`src/laya_server/_state.py`** — `initialize_state(app, cfg)` helper. Single source of
@@ -59,9 +98,6 @@ Format follows the embed-server changelog convention.
   mocked worker). Catches "tests pass but app wiring broken."
 - **`tests/test_cli.py`** — 7 CLI contract tests (version, status --json schema, health exit
   codes). Verifies the frozen JSON API.
-- **`~/.qwen/mcp-servers/laya.js`** — JS MCP server (stdio). Direct HTTP via fetch. 4 tools:
-  laya_system_one, laya_health, laya_stats, laya_unload. No lifecycle management. No Python
-  dependency. Registered in `~/.qwen/settings.json`.
 - **`httpx>=0.27`, `click>=8.0`** added to core dependencies.
 - **`laya`** console entry point (`laya_server.cli:cli`).
 
@@ -73,8 +109,8 @@ Format follows the embed-server changelog convention.
 - **`pyproject.toml`** — added httpx, click to deps; added `laya` entry point.
 
 ### Architecture notes
-- The HTTP API is the single source of truth. CLI and MCP are independent frontends.
-- MCP does NOT manage service lifecycle. CLI owns start/stop/restart/status.
+- The HTTP API is the single source of truth. The CLI is an independent frontend.
+- The CLI owns start/stop/restart/status lifecycle.
 - Text CLI output is unstable (human-friendly). JSON output (`--json`) is a frozen API.
 - Batcher coalescing/concurrency is NOT covered by test_server.py (documented gap).
 
@@ -123,8 +159,7 @@ Format follows the embed-server changelog convention.
   (asyncio queue + 5 ms window), dispatching the blocking call to the thread executor.
 - **`src/result_cache.py`** — two-tier result cache (in-memory LRU + SQLite) keyed on
   `sha256(state, questions)`; repeat requests served from memory (~6 ms vs ~128 ms GPU).
-- **`laya-daemon`** — start/stop/status/unload/restart CLI (PID file + idle-unload), mirroring the
-  FSS Chatterbox `model_daemon.py` pattern.
+- **`laya-daemon`** — start/stop/status/unload/restart CLI (PID file + idle-unload).
 - **Idle-unload** — the model auto-unloads from VRAM after `idle.unload_after_s` (default 300 s) and
   re-loads lazily on the next request; `POST /control/unload` + `laya-daemon unload` for explicit
   VRAM release. This makes the ~2.3 GB VRAM footprint on-demand rather than 24/7.
@@ -136,20 +171,13 @@ Format follows the embed-server changelog convention.
   `systemd/laya-service-restart.timer` (weekly CUDA-memory reclaim).
 - **Docs** — README, LINK, SERVICE, CHANGELOG, ROADMAP.
 
-### Verified (2026-09-28, RTX 3090, GPU card 1)
+### Verified (2026-09-28, RTX 3090)
 - Parity: decision-identical to the CPU reference; `input_tokens` exact (267); numerics within 1e-3.
 - CUDA active: `/health` → `providers: ["CUDAExecutionProvider", "CPUExecutionProvider"]`.
 - **~20× speedup**: single warm call 297 ms (CPU) → 15 ms (GPU); 16-concurrent batch ~15 ms/request.
 - Idle-unload/reload cycle proven: unload frees 2.3 GB VRAM; next request reloads (~0.5 s) and
   resumes CUDA inference.
-- Daemon lifecycle: start/stop/status/unload all verified (port freed, VRAM released on stop).
-
-### Done (2026-09-28)
-- **systemd unit installed & active** on bobai: `/etc/systemd/system/laya-service.service` +
-  `laya-service-restart.timer`, with drop-in override at `laya-service.service.d/override.conf`
-  re-pinning `CUDA_VISIBLE_DEVICES=1`. Journal confirms `systemd[1]` owns the process.
-- **Repo pushed** to Gitea: `https://gitea.bobai.com.au/foxadmin/laya-service.git`
-  (`master`, clean tree).
+- Lifecycle: start/stop/status/unload all verified (port freed, VRAM released on stop).
 
 ### Not yet done
 - Interface primitives (typed `laya_choice`/`laya_score`/`laya_noul`, batch primitive) — ROADMAP.

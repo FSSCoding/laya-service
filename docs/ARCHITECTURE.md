@@ -1,21 +1,21 @@
 # Laya GPU Inference Service — Architecture & Service Spec
 
 This document describes *how* the service is built: components, data flow, the HTTP contract in
-detail, tuning knobs, and the daemon/lifecycle model. For deploy/ops details see [QWEN.md](QWEN.md);
-for the original design rationale see [`../laya/docs/LAYA-GPU-SERVICE.md`](../laya/docs/LAYA-GPU-SERVICE.md).
+detail, tuning knobs, and the daemon/lifecycle model. For deploy/ops details see
+[QWEN.md](../QWEN.md).
 
 ---
 
 ## Design goal
 
-A **stable, reliable, on-demand** GPU inference endpoint for the Laya decision model. The user's
-constraint (2026-09-28): the model holds ~2.3 GB VRAM, which is not worth keeping resident 24/7.
-So the service is started/stopped on demand (like ComfyUI / vLLM on bobai) **and** auto-unloads the
-model from VRAM after an idle timeout, re-loading it transparently on the next request.
+A **stable, reliable, on-demand** GPU inference endpoint for the Laya decision model. The model
+holds ~2.3 GB VRAM, which is not worth keeping resident 24/7 on a shared card. So the service is
+started/stopped on demand **and** auto-unloads the model from VRAM after an idle timeout,
+re-loading it transparently on the next request.
 
-The topology mirrors `/MASTERFOLDER/Services/embed-server` (lean, well-tuned, reliable GPU HTTP):
-single process, resident-while-busy model, request coalescing, inference lock, non-blocking event
-loop, two-tier cache, and a clean start/stop lifecycle.
+The topology is a lean, single-process GPU HTTP service: resident-while-busy model, request
+coalescing, inference lock, non-blocking event loop, two-tier cache, and a clean start/stop
+lifecycle.
 
 ---
 
@@ -79,8 +79,8 @@ operators can distinguish "ready" from "will-be-ready-after-cold-start".
 (e.g. OOM kill), in-flight requests are lost. This is acceptable for an inference service —
 requests are idempotent and can be retried.
 
-This is the same TTL/idle-shutdown pattern as FSS Chatterbox's `model_daemon.py` (`ttl`,
-`touch()`, auto-shutdown on idle), adapted from a file-queue daemon to an HTTP server.
+This is the same TTL/idle-shutdown pattern (a `touch()` on each request, auto-shutdown after an
+idle timeout) used by other on-demand model daemons, adapted here to an HTTP server.
 
 ---
 
@@ -154,9 +154,9 @@ re-loads lazily on the next request (~0.7 s cold start).
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `model_dir` | `/MASTERFOLDER/Services/laya/onnx` | Bundle location (read-only). |
+| `model_dir` | *(required)* | Bundle location (read-only). Must point at a directory containing the ONNX bundle. |
 | `host` / `port` | `0.0.0.0` / `11448` | Bind address. |
-| `gpu.visible_devices` | `1` | Card to pin (set via `CUDA_VISIBLE_DEVICES`; see unit). Note: this field is parsed but not read — the real pin is the unit's `CUDA_VISIBLE_DEVICES` env var; keep them in sync. |
+| `gpu.visible_devices` | `0` | Card to pin (set via `CUDA_VISIBLE_DEVICES`; see unit). Note: this field is parsed but not read — the real pin is the unit's `CUDA_VISIBLE_DEVICES` env var; keep them in sync. |
 | `gpu.providers` | `[CUDA, CPU]` | Provider preference list (CUDA first, CPU fallback). |
 | `idle.enabled` | `true` | Auto-unload when idle. |
 | `idle.unload_after_s` | `300` | Idle seconds before VRAM is freed. `0`/disabled = always resident. |
@@ -179,6 +179,7 @@ deliberately, and re-run `test_parity.py` (they break parity with the reference)
   within `1e-3` abs. Do **not** assert exact 4-decimal equality across backends.
 - **Determinism + cache:** results are deterministic for a given `(state, questions)`, so the
   content-addressed cache is safe. Repeat requests are served from memory (~6 ms).
-- **CUDA lib path:** the CUDA EP silently falls back to CPU unless
-  `LD_LIBRARY_PATH` includes `/usr/local/lib/ollama/cuda_v13` (see QWEN.md). Verify via
-  `/health` → `providers` must list `CUDAExecutionProvider` first.
+- **CUDA lib path:** the CUDA EP silently falls back to CPU unless `LD_LIBRARY_PATH` includes
+  the directory holding the CUDA 13 `libcublasLt.so.13` (find it with
+  `ldconfig -p | grep -i cublasLt`; see [QWEN.md](../QWEN.md)). Verify via `/health` →
+  `providers` must list `CUDAExecutionProvider` first.

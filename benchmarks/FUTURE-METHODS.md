@@ -171,9 +171,9 @@ human-review flag, and a `split` assignment. Distribution plan:
 | **inversion pairs** | same semantic problem as (a) one multiclass choice, (b) N binary nouls, (c) hierarchical choice, (d) score/rubric where sensible | 10 problems × 2–4 formulations ≈ 25 |
 | **out-of-distribution** | nonsense states, wrong-domain questions, empty-ish states — expected-to-fail cases; gold = "should not be confident" | 10 |
 
-Domain flavour biased toward Brett's actual intended uses (email triage/actionability, OCR
-review filtering, ticket routing, urgency) so the map is relevant to the adoption decisions,
-not generic.
+Domain flavour biased toward the operator's actual intended uses (email
+triage/actionability, OCR review filtering, ticket routing, urgency) so the map is
+relevant to the adoption decisions, not generic.
 
 **Gold policy:** `deterministic` and `objective` tiers get a single human-approved gold.
 `subjective` tier gets gold + a documented "reasonable range"; metrics on subjective cases
@@ -312,8 +312,8 @@ This is stated explicitly in the report header and in `benchmarks/README.md`.
 
 - Same cases, same gold, run through the **main local 27B model** with forced structured output
   (JSON-schema-constrained answer per question type). Endpoint/model supplied via config
-  (`--reference-endpoint`, `--reference-model`) — no ports or model names hardcoded; ask Brett
-  which endpoint is canonical at build time.
+  (`--reference-endpoint`, `--reference-model`) — no ports or model names hardcoded; confirm
+  with the operator which endpoint is canonical at build time.
 - ≥3 runs per case, mean ± spread (stochastic — standing rule).
 - Budget note: ~300 cases × 3 runs × 2 formulations ≈ 1800 calls; run reference **once per
   corpus version**, cache results under `results/reference-v1/`, not per harness run.
@@ -397,10 +397,11 @@ Phases A, C, E are pure engineering. Phase B is authoring/judgement work — lik
 agent+human review passes, family group by family group. Phase D depends on one decision (which
 endpoint/model is the reference).
 
-## 11. Open decisions (for Brett — noted, not blocking the spec)
+## 11. Open decisions (for the operator — noted, not blocking the spec)
 
 - **D1 — corpus authoring split:** who authors/reviews gold labels? Proposal: agent drafts all
-  families with provenance tags; Brett reviews `objective`/`subjective` tier golds in batches.
+  families with provenance tags; the operator reviews `objective`/`subjective` tier golds in
+  batches.
 - **D2 — reference model/endpoint:** which local 27B endpoint is canonical for §7.
 - **D3 — math deps:** add `scipy`/`numpy` as a `[bench]` extra, or hand-roll Spearman/Kendall/
   AUC/ECE (≈100 lines, zero deps). Lean-repo convention suggests hand-rolled; scipy suggests trust.

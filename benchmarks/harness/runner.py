@@ -6,12 +6,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+# Model bundle location (for provenance capture); defaults to ./onnx.
+_MODEL_DIR = Path(os.environ.get("LAYA_MODEL_DIR", "./onnx"))
 
 # Add service src to path so we can import laya_server modules
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
@@ -36,7 +40,7 @@ def get_tokenizer():
     """Load the Laya tokenizer (cached on first call)."""
     try:
         from transformers import AutoTokenizer
-        tokenizer_path = "/MASTERFOLDER/Services/laya/onnx/tokenizer"
+        tokenizer_path = str(_MODEL_DIR / "tokenizer")
         return AutoTokenizer.from_pretrained(tokenizer_path)
     except Exception as e:
         print(f"Warning: could not load tokenizer: {e}", file=sys.stderr)
@@ -148,7 +152,7 @@ def collect_run_provenance(endpoint: str) -> dict[str, Any]:
 
     # ONNX model hash
     try:
-        model_path = Path("/MASTERFOLDER/Services/laya/onnx/laya.onnx")
+        model_path = _MODEL_DIR / "laya.onnx"
         if model_path.exists():
             prov["onnx_model_hash"] = hashlib.sha256(model_path.read_bytes()).hexdigest()[:16]
         else:
@@ -158,7 +162,7 @@ def collect_run_provenance(endpoint: str) -> dict[str, Any]:
 
     # ONNX config hash
     try:
-        config_path = Path("/MASTERFOLDER/Services/laya/onnx/laya_config.json")
+        config_path = _MODEL_DIR / "laya_config.json"
         if config_path.exists():
             prov["onnx_config_hash"] = hashlib.sha256(config_path.read_bytes()).hexdigest()[:16]
         else:
@@ -168,7 +172,7 @@ def collect_run_provenance(endpoint: str) -> dict[str, Any]:
 
     # Service config hash
     try:
-        svc_config_path = Path("/MASTERFOLDER/Services/laya-service/config/laya_config.json")
+        svc_config_path = Path("config/laya_config.json")
         if svc_config_path.exists():
             prov["service_config_hash"] = hashlib.sha256(svc_config_path.read_bytes()).hexdigest()[:16]
         else:

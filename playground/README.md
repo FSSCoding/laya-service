@@ -6,12 +6,14 @@ ask a typed question, press **Run**, see what Laya actually returns.
 ## Start
 
 ```bash
-cd /MASTERFOLDER/Services/laya-service
-.venv/bin/python playground/server.py --port <PORT>
+# from the repository root, with the venv activated:
+python playground/server.py --port <PORT>
 ```
 
 Pick a free loopback port yourself (the server refuses to start without an
-explicit `--port`). The upstream is fixed to `http://127.0.0.1:11448`.
+explicit `--port`). By default the upstream is `http://127.0.0.1:11448`; if your
+service listens on a different port, pass `--upstream http://127.0.0.1:<port>`
+(loopback-only).
 
 Then open `http://127.0.0.1:<PORT>/` in your browser.
 
