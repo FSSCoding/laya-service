@@ -17,7 +17,7 @@ If the winning prob drops a lot with strong distractors vs rises with
 weak ones, choice is strongly relational. If it barely moves, it's more
 absolute.
 
-Run:  .venv/bin/python campaign/choice-probe.py
+Run:  .venv/bin/python examples/probes/choice_probe.py
 (disposable experiment script — not a durable test corpus)
 """
 

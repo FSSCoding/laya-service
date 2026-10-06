@@ -12,7 +12,7 @@ Two ladders:
   1. Clean ladder — semantically distinct, evenly spaced anchors
   2. Mushy ladder — near-synonym anchors (tests whether scale quality matters)
 
-Run:  .venv/bin/python campaign/score-probe.py
+Run:  .venv/bin/python examples/probes/score_probe.py
 (disposable experiment script — not a durable test corpus)
 """
 

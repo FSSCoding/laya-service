@@ -15,7 +15,7 @@ Two states to check the pattern generalises:
   - "a basketball"  (object)
   - "an email"      (document — closer to noul's designed judgment domain)
 
-Run:  .venv/bin/python campaign/noul-probe.py
+Run:  .venv/bin/python examples/probes/noul_probe.py
 (disposable experiment script — not a durable test corpus)
 """
 
