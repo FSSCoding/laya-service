@@ -2,18 +2,20 @@
 
 Binds to 127.0.0.1 only, on a user-supplied --port. Serves an allowlisted set
 of static files from this package's directory, and proxies /api/health and
-/api/query to the upstream Laya service at the fixed address 127.0.0.1:11448.
+/api/query to the upstream Laya service (default 127.0.0.1:11448, override with
+--upstream — loopback-only).
 
-Design goals (per PLAYGROUND-SPEC.md §7):
+Design goals (per docs/playground/SPEC.md §7):
 - Loopback-only binding; no other network interfaces are ever bound.
-- Fixed upstream; no user-supplied URL substitution.
+- Upstream is loopback-only: --upstream may change the port but must resolve
+  to 127.0.0.1 / localhost; a non-local host is rejected at startup.
 - Allowlisted static files only; no arbitrary filesystem traversal.
 - Upstream status/body pass-through on /api/query and /api/health,
   including error bodies.
 - Modest body-size cap and explicit timeout.
 - Consistent local gateway error envelope for connect/timeout/oversized
   bodies, without attributing them to the upstream.
-- No /control/unload, no arbitrary paths, no configurable upstream.
+- No /control/unload, no arbitrary static paths.
 
 Dependencies: httpx only (already in pyproject.toml). stdlib for everything
 else.
@@ -32,7 +34,8 @@ from urllib.parse import urlparse
 
 import httpx
 
-UPSTREAM_BASE = "http://127.0.0.1:11448"
+DEFAULT_UPSTREAM_BASE = "http://127.0.0.1:11448"
+UPSTREAM_BASE = DEFAULT_UPSTREAM_BASE  # reassigned in main() from --upstream
 LOOPBACK_HOST = "127.0.0.1"
 MAX_BODY_BYTES = 1_000_000  # 1 MB — covers realistic playground payloads
 REQUEST_TIMEOUT_S = 60.0
@@ -44,6 +47,7 @@ STATIC_ALLOWLIST: dict[str, str] = {
     "/index.html": "index.html",
     "/playground.css": "playground.css",
     "/playground.js": "playground.js",
+    "/fox-logo.png": "fox-logo.png",
 }
 
 
@@ -266,11 +270,39 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         default=None,
         help="Override static dir (defaults to the directory containing this script).",
     )
+    parser.add_argument(
+        "--upstream",
+        default=DEFAULT_UPSTREAM_BASE,
+        help=(
+            "Upstream laya-service base URL (default %(default)s). Must be a loopback "
+            "address (127.0.0.1 or localhost); the playground never proxies to a non-local host."
+        ),
+    )
     return parser.parse_args(argv)
 
 
+def _validate_upstream(upstream: str) -> str:
+    """Normalise and loopback-validate the --upstream value."""
+    parsed = urlparse(upstream.rstrip("/"))
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError(f"invalid upstream URL: {upstream!r} (expected http://host:port)")
+    if not _is_loopback_address(parsed.hostname):
+        raise ValueError(
+            f"upstream host {parsed.hostname!r} is not a loopback address; "
+            "the playground only proxies to 127.0.0.1 / localhost"
+        )
+    return f"{parsed.scheme}://{parsed.netloc}"
+
+
 def main(argv: list[str] | None = None) -> int:
+    global UPSTREAM_BASE
     args = parse_args(sys.argv[1:] if argv is None else argv)
+
+    try:
+        UPSTREAM_BASE = _validate_upstream(args.upstream)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(1)
 
     if args.dir:
         playground_dir = Path(args.dir).resolve()

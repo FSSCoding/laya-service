@@ -1,4 +1,6 @@
-/* Laya Playground — FSS dark warm theme (offline-safe; external fonts optional). */
+/* Laya Playground — Fox Software Solutions dark warm theme.
+   Web fonts load from Google Fonts when online; offline the page degrades
+   gracefully to the serif/sans fallback stacks defined in --font-head/--font-body. */
 
 :root {
   --bg0: #0a0805;
@@ -141,6 +143,32 @@ body {
   text-align: center;
   border-top: 1px solid var(--border-soft);
   margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.fss-credit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  opacity: 0.85;
+}
+
+.fss-credit a {
+  color: var(--text-dim);
+  text-decoration: none;
+}
+
+.fss-credit a:hover {
+  text-decoration: underline;
+}
+
+.fss-logo {
+  width: 22px;
+  height: 22px;
+  opacity: 0.9;
 }
 
 /* ---------- type ---------- */
