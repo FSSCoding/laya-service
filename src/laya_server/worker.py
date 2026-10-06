@@ -2,8 +2,8 @@
 Laya ONNX inference worker (GPU).
 
 Loads the ONNX bundle once (resident), builds inputs for any number of typed questions about one
-state, runs a single forward pass via onnxruntime-gpu, and shapes the calibrated answers exactly as
-/MasterFOLDER/Services/laya/src/laya.ts does. The request/response shape follows Jev's
+state, runs a single forward pass via onnxruntime-gpu, and shapes the calibrated answers to match
+the @receptron/laya reference implementation. The request/response shape follows the Jev
 system_one API.
 """
 from __future__ import annotations

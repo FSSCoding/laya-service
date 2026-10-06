@@ -1,9 +1,8 @@
 """
 RequestBatcher — coalesce concurrent HTTP requests into one GPU forward pass.
 
-Ported from /MasterFOLDER/Services/embed-server/embedding_server.py (RequestBatcher). The idea is
-the same as Laya's own batching (multiple questions -> one call): 16 concurrent requests get merged
-into one onnxruntime run instead of 16 serialised runs.
+The idea is the same as Laya's own batching (multiple questions -> one call): a burst of
+concurrent requests gets merged into one onnxruntime run instead of many serialised runs.
 
 Flow:
   caller -> submit(requests) -> puts (requests, Future) in queue -> awaits Future

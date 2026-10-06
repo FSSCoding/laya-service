@@ -1,6 +1,5 @@
 """
-Two-tier result cache (LRU in-memory + SQLite), ported in shape from
-/MasterFOLDER/Services/embed-server/src/embedding_cache.py.
+Two-tier result cache (LRU in-memory + SQLite).
 
 Laya results are deterministic for a given (state, questions) — the same request always yields the
 same calibrated probabilities — so a content-addressed cache is safe. Key = sha256 of the canonical

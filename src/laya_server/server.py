@@ -224,7 +224,7 @@ def create_app(cfg: AppConfig) -> FastAPI:
         w.release()
         st.worker = None
         logger.info("Model unloaded from GPU (manual)")
-        return {"status": "unloaded", "gpu_freed_mb": 2400}
+        return {"status": "unloaded"}
 
     @app.exception_handler(ValueError)
     async def validation_error_handler(request: Request, exc: ValueError):
@@ -286,9 +286,11 @@ def _cache_key(state: Any, questions: Dict[str, Any]) -> str:
 def run_server(config_path: str | None = None, log_level: str = "info") -> None:
     """Console entry point: load config, configure logging, start uvicorn.
 
-    Accepts an optional positional config path (for the console script) or
-    --config /path/to/config.json (for python -m laya_server). log_level is the
-    uvicorn log level; it can also be set via --log-level on the command line.
+    Flags are parsed from argv when the ``laya-server`` console script is invoked
+    directly: ``--config /path/to/config.json`` and ``--log-level {debug,info,
+    warning,error}``. With no ``--config``, resolution falls back to the
+    LAYA_CONFIG_PATH env var or ``config/laya_config.json`` relative to CWD.
+    ``python -m laya_server`` instead dispatches to the ``laya`` CLI.
     """
     import argparse
 

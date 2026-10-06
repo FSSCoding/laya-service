@@ -1,0 +1,20 @@
+Laya GPU Inference Service (laya-service)
+
+This software depends on and builds upon the following third-party components:
+
+- Laya model weights (421M parameters, English checkpoint)
+    Released by Convai Innovations under the Apache License 2.0.
+    Available at: https://huggingface.co/convaiinnovations/laya
+    The model weights are NOT redistributed by this repository; the service
+    reads them from a user-specified model_dir at runtime.
+
+- @receptron/laya inference wrapper (sequence rendering logic)
+    Copyright 2026 Receptron. Licensed under the MIT License.
+    Available at: https://github.com/receptron/laya
+    The sequence.py module in this repository is a Python port of the
+    MIT-licensed sequence.ts from that project.
+
+The Apache-2.0 license of this repository applies to the code contained in
+this repository only. It does not relicense the Laya model weights, and it
+does not grant any right to use the "Fox Software Solutions" name, logo, or
+trademarks for any purpose other than attribution of the original work.

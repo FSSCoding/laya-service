@@ -77,11 +77,9 @@ def test_input_validation() -> dict:
          {"state": {"subject": "s", "body": "b"},
           "questions": {"q": {"type": "noul", "instructions": "x" * 5000}}},
          "200 or truncated"),
-        ("duplicate_qids",
-         {"state": {"subject": "s", "body": "b"},
-          "questions": {"q": {"type": "noul", "instructions": "a"},
-                        "q": {"type": "choice", "instructions": "b", "criteria": {"x": "1"}}}},
-         "last wins or error"),
+        # NOTE: a "duplicate question id" probe is not expressible here — the request
+        # body is a JSON object, which cannot carry two keys with the same name, so any
+        # such payload collapses to a single question before it reaches the server.
     ]
 
     for label, payload, expected in probes:

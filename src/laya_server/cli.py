@@ -412,7 +412,7 @@ def unload_cmd(endpoint: str | None):
         raise click.ClickException(str(e))
 
     if data.get("status") == "unloaded":
-        click.echo(f"Model unloaded. ~{data.get('gpu_freed_mb', 0)} MB VRAM freed.")
+        click.echo("Model unloaded from GPU.")
     else:
         click.echo(f"Model was already unloaded ({data.get('status')})")
 

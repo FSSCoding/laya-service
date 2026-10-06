@@ -1,6 +1,7 @@
 """
-Pure (model-free) Python port of the request rendering in the checkpoint's rl_common.py —
-a faithful port of /MASTERFOLDER/Services/laya/src/sequence.ts.
+Pure (model-free) Python port of the request rendering in the Laya checkpoint's rl_common.py —
+a faithful port of the MIT-licensed sequence.ts from @receptron/laya
+(https://github.com/receptron/laya). Attribution required by the upstream MIT licence.
 
 Kept separate from the ONNX session so it can be unit-tested without the weights. Every
 function mirrors its TypeScript counterpart exactly so that GPU outputs match the CPU
@@ -9,6 +10,7 @@ reference to 4 decimals.
 from __future__ import annotations
 
 import json
+import math
 from typing import Any, Dict, List, Sequence
 
 # choice -> 0, score -> 1, noul -> 2
@@ -90,13 +92,13 @@ def confidence_from_probs(p: Sequence[float]) -> float:
         return 1.0
     ent = 0.0
     for x in p:
-        ent -= x * math_log(max(x, 1e-12))
-    return 1.0 - ent / math_log(k)
+        ent -= x * math.log(max(x, 1e-12))
+    return 1.0 - ent / math.log(k)
 
 
 def softmax(z: Sequence[float]) -> List[float]:
     zmax = max(z)
-    e = [math_exp(v - zmax) for v in z]
+    e = [math.exp(v - zmax) for v in z]
     s = sum(e)
     return [v / s for v in e]
 
@@ -104,23 +106,8 @@ def softmax(z: Sequence[float]) -> List[float]:
 def _round4(x: float) -> float:
     # JS Math.round(x*1e4)/1e4. Python round() uses banker's rounding; JS uses half-up.
     # Match JS: round away from zero on .5 ties.
-    import math
-
     r = math.floor(x * 1e4 + 0.5) if x >= 0 else math.ceil(x * 1e4 - 0.5)
     return r / 1e4
-
-
-# local math aliases to keep call sites readable and match the TS names
-def math_log(x: float) -> float:
-    import math
-
-    return math.log(x)
-
-
-def math_exp(x: float) -> float:
-    import math
-
-    return math.exp(x)
 
 
 class SpecialIds:
