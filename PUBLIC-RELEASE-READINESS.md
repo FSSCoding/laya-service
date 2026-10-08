@@ -38,7 +38,8 @@ Total: 6 commits, ~69 files touched. Functional behaviour unchanged (parity bar 
 
 Swept the whole tree for: `/MASTERFOLDER`, `/home/bob`, `bobai`, `10.23.88.*`, `foxadmin`,
 `sudo-gui`, Ollama CUDA path, MCP server path, private Gitea URL. After the pass, **no hit remains in
-any tracked file** except the two scratch docs below and `QWEN.md` (see Unresolved items).
+any tracked file** (the two scratch docs were deleted at the end; `QWEN.md` is gitignored and
+untracked — see Unresolved items).
 
 Removed/generalised, by category:
 
@@ -118,7 +119,7 @@ macOS = do-not-port (no CUDA EP); Windows = feasible-in-principle but not built 
 | Clean-install (example config) | raises clear `ValidationError: model_dir does not exist: CHANGE_ME...` |
 | Clean-install (real `model_dir`) | loads cleanly, neutral defaults (host 127.0.0.1, port 11448, visible_devices 0) |
 | Playground | static + health proxy + query proxy + logo (200, 13 KB) + footer credit |
-| Repo-wide secret/private-ref sweep | only hits: 2 scratch docs + `QWEN.md` (see Unresolved) |
+| Repo-wide secret/private-ref sweep | only hit: `QWEN.md` (now gitignored/untracked; not in public tree) |
 
 ---
 
@@ -162,12 +163,11 @@ this doctrine:
 
 ## Unresolved items (need your action)
 
-1. **`QWEN.md` rewrite (BLOCKED).** This is the one tracked file still containing private references
-   (`bobai`, `10.23.88.5`, `/MASTERFOLDER` paths, Gitea remote, MCP path, Ollama CUDA path, `sudo-gui`,
-   card pin 1). The general version is prepared, but the auto-mode policy blocks writing to `QWEN.md` as a
-   protected agent-context file and requires per-action manual approval this session cannot grant. **You
-   need to either approve that specific write, or overwrite `QWEN.md` yourself** with the general content.
-   Everything else in the tree is sanitised.
+1. **`QWEN.md` is gitignored, not sanitised.** It is the agent operating context for this repo on
+   this machine (live deploy details: host, GPU pin, CUDA lib path, systemd state, private paths). It
+   is kept local and **excluded from the public tree via `.gitignore`** — a stranger installing the
+   service doesn't need it (that story lives in `docs/INSTALL.md`). It stays useful to agents working
+   here. It was `git rm --cached`'d so it no longer ships with a clone.
 2. **`[project.urls] repository`** points at
    `https://github.com/foxsoftwaresolutions/laya-service` — verify this matches the org/repo you will
    create. No repo was created and nothing was pushed.

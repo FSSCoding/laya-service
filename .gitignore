@@ -28,6 +28,10 @@ benchmarks/results/
 .qwen/
 .ruff_cache/
 
+# Machine-specific agent operating context (live deploy details: host, GPU pin,
+# CUDA lib path, systemd state). Public/stranger install story lives in docs/INSTALL.md.
+QWEN.md
+
 # Editor / OS
 .DS_Store
 .idea/
