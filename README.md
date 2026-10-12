@@ -217,6 +217,22 @@ If your service listens on a different port, pass `--upstream http://127.0.0.1:<
 (loopback-only). See [playground/README.md](playground/README.md) and
 [docs/playground/SPEC.md](docs/playground/SPEC.md).
 
+**Choice** — the model returns a probability over each option, not prose:
+
+![Playground — choice](assets/1-choice.webp)
+
+**Score** — an ordered severity ladder (0 → lowest … N → highest), returned as a probability-weighted mean:
+
+![Playground — score](assets/2-score.webp)
+
+**Noul** — P(true) for a single proposition, with the derived P(false):
+
+![Playground — noul](assets/3-noul.webp)
+
+**Batch** — several typed questions about the same state, answered in one forward pass:
+
+![Playground — batch](assets/4-batch.webp)
+
 ---
 
 ## Resource footprint (measured, RTX 3090)
