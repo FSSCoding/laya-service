@@ -1,6 +1,6 @@
 # Laya Service — Public Release Readiness
 
-**Date:** 2026-10-06
+**Date:** 2026-10-06 (final pre-upload verification re-run 2026-10-09)
 **Status:** Ready as a clean public-release candidate. No push, no GitHub repo, no release tag performed (hard boundary held).
 **Scope:** Release-preparation pass on an already-complete service. Behaviour preserved; no redesign, no new features, no porting, no Docker/auth, no Jev adapter implementation.
 
@@ -184,3 +184,49 @@ this doctrine:
 - Stop-trigger conditions (ambiguous licensing, secrets in history requiring rewrite, sanitisation
   altering behaviour) — **none triggered.** Git history contains no secrets (audited during recon);
   sanitisation changed no functional behaviour (parity bar holds).
+
+---
+
+## Final pre-upload verification (2026-10-09)
+
+Re-ran the full gate on the verified release candidate. Results (unchanged from the 2026-10-06
+run except the two doc-consistency fixes below):
+
+- **Lint:** `ruff check src tests playground bench.py` → all checks passed.
+- **Tests:** `pytest tests/` → **94 passed, 10 skipped** (skips = GPU-only parity).
+- **Live (real model, CUDA EP):** `/health` ok + `CUDAExecutionProvider` first; choice/score/noul and a
+  mixed choice+score+noul batch all returned correct shapes with the `rl_agent` routing envelope;
+  `/v1/stats` normal. Playground: static title, logo (200, 13 KB), `/api/health` + `/api/query` proxy,
+  all against a live upstream.
+- **Clean-install:** example config (`CHANGE_ME`) raises a clear `ValidationError`; real `model_dir` loads
+  with neutral defaults.
+- **Secrets/private-refs:** none in tracked HEAD (only the sanitisation-list mentions in this file).
+  Full history has **no credentials**; the only private-host reference in history is the descriptive
+  "repo pushed to Gitea" note in old docs (the private mirror URL, not a credential).
+- **`onnxruntime-gpu`:** confirmed required (`worker.py` does `import onnxruntime as ort`; declared as a
+  runtime dep) — kept.
+- **Scanner dispositions:** `CHANGE_ME` placeholder in the example config and the readiness-doc
+  references kept intentionally; the Google Fonts `wght@600` basic-auth flag treated as a false positive
+  (URL unchanged); `brett@foxsoftwaresolutions.com.au` retained in `pyproject.toml` (no packaging/privacy
+  reason to change it).
+
+**Two doc-consistency fixes made in this pass** (no behaviour change):
+
+1. `README.md` — removed the "calibrated probabilities" overclaim (3 places) → "confidence /
+   directional confidence probabilities", consistent with the doctrine and the hardening data
+   (outputs are directional, not saturated/calibrated).
+2. `benchmarks/HARDENING-REPORT.md` — reconciled internal contradiction: the safe-envelope table and
+   Key-numbers now state coalescing **works** and truncation is **reported** (current shipped behaviour);
+   §3.1/§4.1 pre-fix findings are preserved as dated historical records; a post-report-fixes note added.
+   This resolves the stale "coalescing NOT functioning" / "silent truncation" claims that contradicted the
+   report's own Bug/Recommendations table.
+
+**Cross-document consistency (verified):** README/INSTALL/ARCHITECTURE/ROADMAP/MODEL-DOCTRINE/
+HARDENING-REPORT/CHANGELOG agree on coalescing (works), truncation (now reported), supported platform
+(Linux + NVIDIA GPU + CUDA 13), routing-signal status (experimental), model acquisition
+(`huggingface.co/convaiinnovations/laya`), config path (`config/laya_config.json` + example), and the
+three supported primitives. No stale exact test-count claims; Windows/macOS and Jev compatibility are
+presented as research-only (not implemented); model weights are consistently stated as **not
+redistributed** (obtained separately). `sequence.py` MIT provenance retained. Future public URL in
+`pyproject.toml` is exactly `https://github.com/foxsoftwaresolutions/laya-service` (repo not yet created —
+reported only, not created).

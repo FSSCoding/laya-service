@@ -3,7 +3,7 @@
 **GPU-accelerated Laya inference over HTTP.** A 421M-parameter System-1 *decision* model
 (`onnxruntime-gpu`) served by a lean FastAPI app. Laya does not generate text: you give it a
 *state* (a ticket, an email, a JSON object) and a set of typed questions, and it returns
-calibrated probabilities for every answer in a single forward pass.
+confidence probabilities for every answer in a single forward pass.
 
 This repository is the HTTP service around that model — resident model loading, request
 coalescing, a two-tier result cache, and a small CLI + playground. It is built by
@@ -24,9 +24,11 @@ three kinds of question about a given state:
 | `score` | expected level on an ordered rubric | expected level (0…n-1) + per-level probabilities |
 | `noul` | P(true) for a yes/no statement | a single probability |
 
-The model produces **calibrated probabilities**. Treat them as confidence signals to gate and
-rank actions on, not as ground-truth facts. For the safe-usage doctrine and how to phrase good
-questions, read [docs/MODEL-DOCTRINE.md](docs/MODEL-DOCTRINE.md).
+The model produces **directional confidence probabilities** — reliable for ranking and gating,
+but not calibrated to real-world frequencies and not saturated at 0/1 (see the safe-usage notes
+below). Treat them as confidence signals to gate and rank actions on, not as ground-truth facts.
+For the safe-usage doctrine and how to phrase good questions, read
+[docs/MODEL-DOCTRINE.md](docs/MODEL-DOCTRINE.md).
 
 ---
 
@@ -192,7 +194,7 @@ Base URL: `http://<host>:11448`
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/system_one` | Run Laya: `{state, questions}` → calibrated answers |
+| `POST` | `/system_one` | Run Laya: `{state, questions}` → confidence answers |
 | `GET` | `/health` | Liveness + active providers + model state + uptime |
 | `GET` | `/v1/stats` | Request / latency / cache / provider statistics |
 | `POST` | `/control/unload` | Unload the model from GPU memory |

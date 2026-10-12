@@ -1,8 +1,16 @@
 # Laya Service Hardening Report (v1.0, 2026-09-29)
 
-**Provider:** CUDAExecutionProvider (card 1, RTX 3090) — verified at start of each test run.
+**Provider:** CUDAExecutionProvider (RTX 3090) — verified at start of each test run.
 **Model:** Laya 421M-param ONNX, v0.3.0
 **Service:** `laya-service` on :11448, systemd-managed
+
+> **Post-report fixes (2026-10):** three findings below were confirmed and *fixed* in the shipped
+> code — cross-request **coalescing** now merges a batch into one forward pass via `worker.system_many()`
+> (§3.1, Bug #1), **truncation** is now surfaced via `usage.truncated` + `usage.original_input_tokens`
+> (§4.1, Bug #4), and known **validation failures return 400** instead of 500 (Bug #5). The §3.1 and
+> §4.1 sections preserve the original pre-fix measurements as a dated record; the "Bugs and Issues"
+> table and Recommendations mark these DONE. The safe operating envelope table reflects the *current*
+> (post-fix) behaviour.
 
 ---
 
@@ -13,7 +21,7 @@
 | **choice** | 2–120 options | 96–120 (low entropy, near-certain) | **128 options** (head_max_len=192) | 500 `{"error":{"message":"options do not fit in head_max_len=192 tokens"}}` — should be 400 |
 | **score** | 2–11 levels | — | **1 level** (ONNX crash); **0 levels** (empty) | 500 ONNXRuntimeError — should be 400 validation |
 | **noul** | any binary proposition | — | — | No hard limit; handles empty/unicode/structured states |
-| **state** | up to **512 rendered tokens** | — | **512 tokens** (silent truncation) | 200 with truncated input; **no warning, no error** |
+| **state** | up to **512 rendered tokens** | — | **512 tokens** (truncation, now reported) | 200 with truncated input; `usage.truncated: true` + `usage.original_input_tokens` set |
 | **questions** | 1–50+ questions (single forward pass) | — | 512 token budget (shared with state) | 422 if empty; 500 if invalid type |
 | **batch** | 1–200 concurrent (tested) | 200–512 (queueing) | 512 (batcher max) | No overflow error at 513; all requests eventually served |
 
@@ -28,7 +36,7 @@
 | VRAM loaded (card 1) | **8.8 GB** (2.1 GB model + context + other tenants) |
 | RAM RSS | **~227 MB** |
 | Max throughput (sequential) | **~0.3 rps** at 200+ concurrent |
-| Coalescing | **Not functioning** (0 coalesced batches observed) |
+| Coalescing | **Functioning** — concurrent requests merge into one forward pass via `worker.system_many()` (post-fix; see §3.1 historical note) |
 
 ---
 
@@ -125,7 +133,9 @@ Six states from routine to safety-critical, scored against a shared rubric:
 
 ### 3.1 Coalescing window
 
-**Finding: Coalescing is NOT functioning.**
+**Finding (pre-fix, 2026-09-29): Coalescing was NOT functioning.** *(Fixed in the shipped code —
+concurrent requests now merge into one forward pass via `worker.system_many()`; the envelope table
+and Bug #1 reflect the current behaviour.)*
 
 - Sequential requests (even at 0ms offset) never coalesce: each gets its own batch.
 - `/v1/stats` shows `batch_coalesced: 0` after thousands of requests.
@@ -175,7 +185,10 @@ Six states from routine to safety-critical, scored against a shared rubric:
 | ~550 | 436 | 8.4 | OK (capped) |
 | ~600 | 493 | 8.3 | OK (capped) |
 
-**Finding: max_len=512 is enforced by silent truncation.** Once the rendered sequence hits 512 tokens, excess content is dropped. No warning, no error, no indication in the response that truncation occurred. The `input_tokens` field reports the actual (truncated) count.
+**Finding (pre-fix, 2026-09-29): max_len=512 was enforced by silent truncation.** *(Fixed — the
+response now sets `usage.truncated: true` + `usage.original_input_tokens` when the state is
+truncated; see Bug #4.)* Once the rendered sequence hits 512 tokens, excess content is dropped. The
+`input_tokens` field reports the actual (truncated) count.
 
 ### 4.2 Combined budget
 
