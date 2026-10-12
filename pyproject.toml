@@ -41,7 +41,7 @@ dev = [
 ]
 
 [project.urls]
-repository = "https://github.com/foxsoftwaresolutions/laya-service"
+repository = "https://github.com/FSSCoding/laya-service"
 
 [project.scripts]
 laya-server = "laya_server.server:run_server"

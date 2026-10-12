@@ -169,8 +169,8 @@ this doctrine:
    service doesn't need it (that story lives in `docs/INSTALL.md`). It stays useful to agents working
    here. It was `git rm --cached`'d so it no longer ships with a clone.
 2. **`[project.urls] repository`** points at
-   `https://github.com/foxsoftwaresolutions/laya-service` — verify this matches the org/repo you will
-   create. No repo was created and nothing was pushed.
+   `https://github.com/FSSCoding/laya-service` — the intended public repo. The `github` remote is
+   configured locally; no repo has been created on GitHub and nothing has been pushed.
 3. **Future results convention:** `benchmarks/results/` is gitignored; confirm the team will keep future
    runs out of git (canonical baseline already committed under `benchmarks/baseline/`).
 
@@ -228,5 +228,5 @@ HARDENING-REPORT/CHANGELOG agree on coalescing (works), truncation (now reported
 three supported primitives. No stale exact test-count claims; Windows/macOS and Jev compatibility are
 presented as research-only (not implemented); model weights are consistently stated as **not
 redistributed** (obtained separately). `sequence.py` MIT provenance retained. Future public URL in
-`pyproject.toml` is exactly `https://github.com/foxsoftwaresolutions/laya-service` (repo not yet created —
-reported only, not created).
+`pyproject.toml` is exactly `https://github.com/FSSCoding/laya-service` (the `github` remote is
+configured locally; repo not yet created on GitHub — reported only, not created).
