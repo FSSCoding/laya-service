@@ -104,7 +104,7 @@
     </div>
     <p class="fine">The human CLI is <code>.venv/bin/laya</code> — <code>laya health</code>, <code>laya choice --state … --questions …</code>. Agent MCP tools (<code>laya_system_one</code> etc.) exist too but this page only talks to <code>/api/query</code> and <code>/api/health</code>.</p>
     <div class="notice warn" role="note">
-      <strong>Separate HTTP requests are NOT coalesced.</strong> The 5&nbsp;ms request-batcher window does not merge distinct browser submissions into one inference pass — <code>RequestBatcher._process_batch()</code> processes queued payloads serially. Do not raise HTTP concurrency expecting throughput. Several questions inside <em>one</em> <code>/system_one</code> request, however, are answered in one model forward pass — that is what the Batch tab means. See <code>benchmarks/HARDENING-REPORT.md</code> §3 and <code>src/laya_server/batcher.py</code>.
+      <strong>What “Batch” means here.</strong> Several questions inside <em>one</em> <code>/system_one</code> request are answered in a single model forward pass — that is what the Batch tab demonstrates. Separate browser submissions are distinct HTTP requests (each carries its own state); the 5&nbsp;ms request-batcher window can coalesce <em>concurrent</em> requests into one pass under load, but a sequential click-Run-click flow won’t. See <code>benchmarks/HARDENING-REPORT.md</code> §3 and <code>src/laya_server/batcher.py</code>.
     </div>
   </section>
 
