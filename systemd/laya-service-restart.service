@@ -1,0 +1,32 @@
+# Laya GPU Inference Service — weekly restart companion (systemd unit)
+#
+# A bounded oneshot that restarts the main laya-service.service. It carries no GPU
+# or CUDA configuration of its own — the main service unit (and any drop-ins on it)
+# is the single source of truth for the GPU pin and CUDA library path, so this
+# restart preserves exactly the working CUDA configuration.
+#
+# The matching timer, laya-service-restart.timer, schedules this unit weekly to
+# reclaim fragmented CUDA memory.
+#
+# Install with:
+#   sudo cp systemd/laya-service-restart.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable laya-service-restart.timer   # the timer, not this unit
+
+[Unit]
+Description=One-shot restart of laya-service to reclaim fragmented CUDA memory
+# Order after the main service so a restart issued while it is starting is coherent.
+After=laya-service.service
+
+[Service]
+Type=oneshot
+# This unit only calls `systemctl restart` on another unit; it needs root to do so.
+# It runs as root and touches no model/GPU config — the restarted service keeps its
+# own User=bob identity and environment.
+ExecStart=/usr/bin/systemctl restart laya-service.service
+
+# If the restart fails, make it loud in the journal: do not let systemd treat a
+# failed oneshot as a silent no-op. A non-zero exit here surfaces in
+# `journalctl -u laya-service-restart.service`.
+RemainAfterExit=no
+TimeoutStartSec=120

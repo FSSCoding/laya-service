@@ -19,8 +19,9 @@ see [README.md](../README.md) and [ARCHITECTURE.md](ARCHITECTURE.md).
 | Config file (read at startup) | `$LAYA_HOME/config/laya_config.json` |
 | Model bundle (read-only, **not in this repo**) | whatever `model_dir` points at |
 | Result cache DB (created at runtime) | `~/.laya-service/result_cache.db` |
-| systemd unit template | `$LAYA_HOME/systemd/laya-service.service.template` |
-| systemd timer | `$LAYA_HOME/systemd/laya-service-restart.timer` |
+| systemd unit template (main service) | `$LAYA_HOME/systemd/laya-service.service.template` |
+| systemd restart companion (oneshot) | `$LAYA_HOME/systemd/laya-service-restart.service` |
+| systemd weekly restart timer | `$LAYA_HOME/systemd/laya-service-restart.timer` |
 | HTTP port | `11448` (change in config if needed) |
 
 ---
@@ -136,7 +137,11 @@ Expected shape: `department` → a choice + probabilities, `urgency` → a 0–3
 
 ## Step 4 — (Optional) Install as a systemd service
 
-Edit the template's five `__CONFIGURATION__` points, then install:
+Two units make up the service: the main service (`laya-service.service`) and a weekly
+restart companion that reclaims fragmented CUDA memory
+(`laya-service-restart.service`, triggered by `laya-service-restart.timer`). Install both.
+
+Edit the template's five `__CONFIGURATION__` points, then install all three unit files:
 
 ```bash
 sed -e "s|__SERVICE_USER__|$SUDO_USER|g" \
@@ -145,12 +150,19 @@ sed -e "s|__SERVICE_USER__|$SUDO_USER|g" \
     -e "s|__CUDA_LIB_PATH__|<cublas-13-dir>|g" \
     systemd/laya-service.service.template > /etc/systemd/system/laya-service.service
 
-sudo cp systemd/laya-service-restart.timer /etc/systemd/system/
+sudo cp systemd/laya-service-restart.service /etc/systemd/system/
+sudo cp systemd/laya-service-restart.timer   /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable --now laya-service.service
 sudo systemctl enable --now laya-service-restart.timer
 ```
 
+> **The timer needs its companion service.** `laya-service-restart.timer` schedules
+> `laya-service-restart.service`. Installing the timer without the companion leaves a timer that
+> fires at the weekly slot with no service to activate — the reclaim silently never happens. The
+> `Unit=` line in the timer names the target explicitly, so this is visible, not implicit. Install
+> the service alongside the timer.
+>
 > **Why a weekly restart timer:** it reclaims fragmented CUDA memory. The service itself is
 > stable; the timer is a memory-hygiene measure, not a liveness mechanism.
 >
@@ -200,13 +212,20 @@ LAYA_MODEL_DIR="$MODEL_DIR" \
 
 ## Uninstall / stop
 
+Remove the main service, the restart companion, and the timer — all three are installed:
+
 ```bash
 sudo systemctl stop laya-service.service
 sudo systemctl disable --now laya-service.service
 sudo systemctl disable --now laya-service-restart.timer
-sudo rm /etc/systemd/system/laya-service.service /etc/systemd/system/laya-service-restart.timer
+sudo rm /etc/systemd/system/laya-service.service \
+       /etc/systemd/system/laya-service-restart.service \
+       /etc/systemd/system/laya-service-restart.timer
 sudo systemctl daemon-reload
 ```
+
+> If you added a drop-in override (e.g. to re-pin the GPU card), remove its directory too:
+> `sudo rm -r /etc/systemd/system/laya-service.service.d`.
 
 To clear the result cache: stop the service, then `rm ~/.laya-service/result_cache.db` (or set
 `"cache": {"enabled": false}` in the config).
