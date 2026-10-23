@@ -51,9 +51,13 @@ ss -tlnp | grep 11448 || echo "port 11448 free"
 nvidia-smi --query-gpu=index,memory.used,memory.total --format=csv,noheader
 ```
 
-> **Why the model bundle isn't in this repo:** the weights are several hundred MB and are
-> licensed separately (Apache-2.0, Convai Innovations). Download from
-> <https://huggingface.co/convaiinnovations/laya> and point `model_dir` at the directory.
+> **Why the model bundle isn't in this repo:** the weights are ~1.7 GB and are licensed
+> separately (Apache-2.0, Convai Innovations). Download the **pre-exported ONNX bundle** from
+> <https://huggingface.co/receptron/laya-onnx> and point `model_dir` at it.
+>
+> Do **not** use <https://huggingface.co/convaiinnovations/laya> — that is the source
+> PyTorch/safetensors checkpoint (what the ONNX was exported from), which this service does not
+> load. The service requires `laya.onnx`.
 
 ---
 

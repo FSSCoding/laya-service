@@ -1,21 +1,27 @@
 # Laya Service — Public Release Readiness
 
-**Date:** 2026-10-06 (final pre-upload verification re-run 2026-10-09)
-**Status:** Ready as a clean public-release candidate. No push, no GitHub repo, no release tag performed (hard boundary held).
-**Scope:** Release-preparation pass on an already-complete service. Behaviour preserved; no redesign, no new features, no porting, no Docker/auth, no Jev adapter implementation.
+**Date:** 2026-10-06 (final pre-upload verification re-run 2026-10-09; model-acquisition re-verification 2026-10-23)
+**Status:** Ready as a clean public-release candidate **with one correction applied and verified** (model-acquisition path). No push, no GitHub repo, no release tag performed (hard boundary held).
+**Scope:** Release-preparation pass on an already-complete service. Behaviour preserved; no redesign, no new features, no porting, no Docker/auth, no Jev adapter implementation. The 2026-10-23 pass is limited to fixing and verifying the model-acquisition documentation — no functional code change.
 
 ---
 
 ## Acceptance gate (stranger test)
 
-**Verdict: PASS.** A stranger on supported Linux can, from this checkout alone:
-clone → understand what Laya is (and isn't) → obtain the model from Hugging Face and configure
-`model_dir` → install into a venv → start the service → verify CUDA/CPU via `/health` providers →
-run all three primitives (`choice`/`score`/`noul`) via HTTP, the CLI, and the Python client → open the
-playground → and read the documented limitations — **without any Brett-specific paths, machines, IPs,
-or GPU-card assumptions.**
+**Verdict: PASS (model acquisition re-verified from public sources 2026-10-23).** A stranger on
+supported Linux can, from this checkout alone: clone → understand what Laya is (and isn't) → obtain
+the **pre-exported ONNX bundle** from `huggingface.co/receptron/laya-onnx` and configure `model_dir`
+→ install into a venv → start the service → verify CUDA/CPU via `/health` providers → run all three
+primitives (`choice`/`score`/`noul`) via HTTP, the CLI, and the Python client → open the playground
+→ and read the documented limitations — **without any Brett-specific paths, machines, IPs, or
+GPU-card assumptions.**
 
-Verified against a real model and a live CUDA service on 2026-10-06 (results below).
+The 2026-10-06 run was verified against an **already-existing local ONNX bundle** — it proved the
+service loads and serves a correct bundle, but it did **not** prove that a stranger following the
+public docs can *acquire* a loadable bundle. On 2026-10-23 that gap was closed (see
+[Model-acquisition re-verification](#model-acquisition-re-verification-2026-10-23)).
+
+**Prior verification (2026-10-06):** against a real model and a live CUDA service (results below).
 
 ---
 
@@ -224,9 +230,76 @@ run except the two doc-consistency fixes below):
 **Cross-document consistency (verified):** README/INSTALL/ARCHITECTURE/ROADMAP/MODEL-DOCTRINE/
 HARDENING-REPORT/CHANGELOG agree on coalescing (works), truncation (now reported), supported platform
 (Linux + NVIDIA GPU + CUDA 13), routing-signal status (experimental), model acquisition
-(`huggingface.co/convaiinnovations/laya`), config path (`config/laya_config.json` + example), and the
-three supported primitives. No stale exact test-count claims; Windows/macOS and Jev compatibility are
-presented as research-only (not implemented); model weights are consistently stated as **not
-redistributed** (obtained separately). `sequence.py` MIT provenance retained. Future public URL in
-`pyproject.toml` is exactly `https://github.com/FSSCoding/laya-service` (the `github` remote is
-configured locally; repo not yet created on GitHub — reported only, not created).
+(`huggingface.co/receptron/laya-onnx`, corrected 2026-10-23 from the source checkpoint), config path
+(`config/laya_config.json` + example), and the three supported primitives. No stale exact test-count
+claims; Windows/macOS and Jev compatibility are presented as research-only (not implemented); model
+weights are consistently stated as **not redistributed** (obtained separately). `sequence.py` MIT
+provenance retained. Future public URL in `pyproject.toml` is exactly
+`https://github.com/FSSCoding/laya-service` (the `github` remote is configured locally; repo not yet
+created on GitHub — reported only, not created).
+
+---
+
+## Model-acquisition re-verification (2026-10-23)
+
+**Defect found (release-blocking).** The prior docs pointed users to
+`huggingface.co/convaiinnovations/laya` as "the model." That repo is the **source PyTorch/safetensors
+checkpoint** (`model.safetensors` + `typed-decisions/` + `multilingual/` subfolders) — it contains **no
+ONNX**. This service is `onnxruntime-gpu`-only and hard-codes the load path in `src/laya_server/worker.py`:
+`laya.onnx`, `laya.onnx.data`, `laya_config.json`, and `tokenizer/`. The `_config.py` validator rejects
+any `model_dir` missing the ONNX bundle. So a stranger following the old docs would download the source
+checkpoint, point `model_dir` at it, and get a hard start failure. The 2026-10-06 PASS was therefore
+incomplete on acquisition: it verified install against an already-present local ONNX bundle, not a
+public-source acquire.
+
+**Fix.** A public, pre-exported ONNX bundle exists at `huggingface.co/receptron/laya-onnx` whose file
+layout matches `worker.py` exactly:
+
+```
+laya.onnx            ~3.7 MB   graph
+laya.onnx.data       ~1.69 GB  fp32 weights
+laya_config.json               max_len=512, head_max_len=192, temperatures
+tokenizer/tokenizer.json       tokenizer
+tokenizer/tokenizer_config.json
+```
+
+Docs corrected to name `receptron/laya-onnx` as the download target and `convaiinnovations/laya` as the
+source checkpoint (export-from-source kept as an advanced option only):
+
+- `README.md` §"Getting the model" — primary target + explicit two-repo warning.
+- `docs/INSTALL.md` prerequisite #3 note — corrected download URL + warning.
+- This file — status, verdict, and cross-doc consistency updated.
+
+**Fresh-install verification (public source only, 2026-10-23).** Performed on this host (NVIDIA RTX 4060
+as GPU 0, RTX 3060 as GPU 1, driver 580.178.04, CUDA 13 `libcublasLt.so.13` at
+`/usr/local/cuda/targets/x86_64-linux/lib`). Steps: downloaded `receptron/laya-onnx` to a fresh dir
+(`/fss/models/laya-onnx`); wrote a fresh `config/laya_config.json` pointing only at it (`model_dir`,
+`gpu.visible_devices=0`, port 11448); started the service with
+`CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=/usr/local/cuda/targets/x86_64-linux/lib:/usr/lib/x86_64-linux-gnu`.
+
+| Check | Result |
+|---|---|
+| Bundle integrity | 5/5 required files present; `laya.onnx.data` = 1,685,258,240 B (matches HF metadata) |
+| `/health` | `status: ok`, `model_loaded: true`, `providers: ["CUDAExecutionProvider","CPUExecutionProvider"]` (CUDA first) |
+| Choice | `choice: billing`, `probabilities {billing: 0.7465, support: 0.2535}`, `confidence 0.183`, `input_tokens 46` |
+| Score | `score 0.8876`, valid `legend` + `probabilities`, `input_tokens 59` |
+| Noul (weak signal) | `noul: 0.0` — expected per doctrine (model "not saturated"; vague state → low P(true)) |
+| Noul (explicit cancel) | `noul: 0.9883` ✅ |
+| Noul (billing true) | `noul: 0.9132` ✅ |
+| Mixed batch (choice+score+noul) | one forward pass, `input_tokens 163`, all three answers + `rl_agent` envelopes |
+| Playground (`port 8090`) | static HTML 200; `/api/health` proxies → CUDA ok; `/api/query` returns real choice answer |
+| Parity vs reference | within the documented bar: choice/score/noul match the 2026-10-06 ranges; noul weak-signal 0.0 is documented behaviour, not drift |
+| **Test suite (GPU/CPU parity gate)** | **`104 passed, 0 failed, 0 skipped` in 15.97s** (`LAYA_MODEL_DIR=/fss/models/laya-onnx CUDA_VISIBLE_DEVICES=0 LD_LIBRARY_PATH=…/cuda/targets/x86_64-linux/lib:…`) |
+
+**Test-count note.** The prior recorded baseline was `94 passed / 10 skipped`, where the 10 skips were
+the GPU-only parity tests — skipped because no local ONNX bundle was present at install time. With the
+freshly downloaded public bundle in `LAYA_MODEL_DIR`, those 10 parity tests **run and pass**, giving the
+observed `104 passed`. This is a *higher* coverage outcome, not a regression: it confirms the GPU and
+CPU execution paths are decision-identical (within the `1e-3` numeric bar, no exact-decimal assertions)
+against the exact bundle normal users will download. No test was added, removed, or modified in this
+pass; the count difference is purely the parity gate executing.
+
+**Conclusion.** The fresh public-source install succeeds end-to-end with no code change — confirming the
+defect was documentation/install-path only, and that `receptron/laya-onnx` is the correct public
+acquisition target. The release is no longer blocked on model acquisition. No push performed (hard
+boundary held).

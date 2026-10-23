@@ -94,11 +94,19 @@ expect CPU latency to be roughly an order of magnitude slower than a warm GPU ca
 
 ## Getting the model
 
-The model weights are **not** included in this repository (they are several hundred MB and are
-licensed separately). Download the official Laya ONNX bundle from Hugging Face:
+The model weights are **not** included in this repository (they are ~1.7 GB and are
+licensed separately). Download the **pre-exported ONNX bundle** from Hugging Face:
 
-- **Model card:** https://huggingface.co/convaiinnovations/laya
+- **ONNX bundle (what this service loads):** https://huggingface.co/receptron/laya-onnx
+- **Source checkpoint (PyTorch/safetensors):** https://huggingface.co/convaiinnovations/laya
 - **Weights licence:** Apache-2.0 (Convai Innovations)
+
+> **Two different repos — do not confuse them.**
+> `receptron/laya-onnx` is the **pre-exported ONNX bundle** (graph + fp32 weights + tokenizer)
+> that this service loads directly. That is the one to download.
+> `convaiinnovations/laya` is the **source PyTorch checkpoint** (safetensors). It is what the
+> ONNX bundle was exported *from* — this service does **not** consume safetensors. Pointing
+> `model_dir` at the source checkpoint will fail: the service requires `laya.onnx`.
 
 `laya_config.json` expects `model_dir` to contain:
 
