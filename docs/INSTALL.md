@@ -157,11 +157,11 @@ sudo systemctl enable --now laya-service.service
 sudo systemctl enable --now laya-service-restart.timer
 ```
 
-> **The timer needs its companion service.** `laya-service-restart.timer` schedules
-> `laya-service-restart.service`. Installing the timer without the companion leaves a timer that
-> fires at the weekly slot with no service to activate — the reclaim silently never happens. The
-> `Unit=` line in the timer names the target explicitly, so this is visible, not implicit. Install
-> the service alongside the timer.
+> **The timer needs its companion service.** `laya-service-restart.timer` activates
+> `laya-service-restart.service` by the systemd same-basename convention (a timer with no
+> explicit target defaults to the service with the matching name). Installing the timer
+> without the companion leaves a timer that fires at the weekly slot with no service to
+> activate — the reclaim silently never happens. Install the service alongside the timer.
 >
 > **Why a weekly restart timer:** it reclaims fragmented CUDA memory. The service itself is
 > stable; the timer is a memory-hygiene measure, not a liveness mechanism.
